@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gh-ui 组件演示</title>
+<style>
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+         color: var(--gh-fg); background: var(--gh-canvas); }
+  h2 { font-size: 16px; border-bottom: 1px solid var(--gh-border); padding-bottom: 8px; margin: 40px 0 16px; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+         background: var(--gh-canvas-subtle); padding: 2px 6px; border-radius: 6px; }
+  .demo-grid > div { border: 1px dashed var(--gh-border); border-radius: 6px;
+                     padding: 12px; font-size: 13px; color: var(--gh-fg-muted); }
+  section { margin-bottom: 24px; }
+  /* 每个示例区块下方的「实现代码」折叠块 */
+  .demo-code { flex-basis: 100%; width: 100%; margin-top: 14px; }
+  .demo-code > summary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border: 1px solid var(--gh-border); border-radius: 6px;
+    background: var(--gh-canvas-subtle); color: var(--gh-fg-muted);
+    font-size: 12px; line-height: 18px; cursor: pointer; user-select: none;
+    list-style: none;
+  }
+  .demo-code > summary::-webkit-details-marker { display: none; }
+  .demo-code > summary::before {
+    content: '▸'; font-size: 10px; transition: transform .15s ease;
+  }
+  .demo-code[open] > summary::before { transform: rotate(90deg); }
+  .demo-code > summary:hover { color: var(--gh-fg); border-color: var(--gh-fg-muted); }
+  .demo-code > summary:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+  .demo-code[open] > summary { margin-bottom: 10px; }
+
+  /* 演示用：菜单里的升级提示条与额度卡片（属于页面内容，不是组件 API） */
+  .demo-banner {
+    margin: 2px 8px 8px; padding: 8px 10px; border-radius: 6px;
+    background: var(--gh-accent-subtle); font-size: 12px; line-height: 16px;
+  }
+  .demo-more {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 14px; color: var(--gh-fg-muted); text-decoration: none;
+  }
+  .demo-more:hover { color: var(--gh-fg); text-decoration: underline; }
+  .demo-credits { padding: 18px; }
+  .demo-credits__title { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600; }
+  .demo-credits__row {
+    display: flex; justify-content: space-between; gap: 12px;
+    margin-top: 10px; font-size: 13px; color: var(--gh-fg-muted);
+  }
+  .demo-credits__note { margin-top: 2px; font-size: 12px; color: var(--gh-fg-muted); }
+  .demo-credits__bar {
+    height: 4px; margin-top: 10px; border-radius: 4px;
+    background: var(--gh-border-muted); overflow: hidden;
+  }
+  .demo-credits__bar > span { display: block; height: 100%; background: var(--gh-accent-emphasis); }
+  /* 库样式是后注入的，同权重会被 .gh-btn 覆盖，这里提高一级选择器权重 */
+  gh-btn.demo-credits__upgrade {
+    width: 100%; justify-content: center; margin-top: 14px;
+    background: var(--gh-success-emphasis); border-color: rgba(0, 0, 0, .15);
+    color: var(--gh-fg-on-emphasis);
+  }
+  gh-btn.demo-credits__upgrade:hover { background: var(--gh-success); border-color: rgba(0, 0, 0, .15); }
+
+  /* ---------- 演示页脚手架：左侧组件目录 + 正文 ---------- */
+  .demo-shell {
+    display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 40px;
+    align-items: start; padding-top: 12px;
+  }
+  .demo-toc {
+    position: sticky; top: 16px; display: flex; flex-direction: column; gap: 10px;
+    max-height: calc(100vh - 32px); min-height: 0;
+  }
+  .demo-toc__list {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 1px; padding-right: 4px;
+  }
+  .demo-toc__item {
+    display: block; padding: 5px 10px; border-radius: 6px;
+    color: var(--gh-fg-muted); font-size: 13px; line-height: 18px;
+    text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: background-color var(--gh-dur-fast, .12s) ease, color var(--gh-dur-fast, .12s) ease;
+  }
+  .demo-toc__item:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+  .demo-toc__item[hidden] { display: none; }
+  .demo-toc__item.is-current { background: var(--gh-accent-subtle); color: var(--gh-accent); font-weight: 600; }
+  #toc-filter { display: block; width: 100%; }
+  .demo-toc__tools { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 8px; border-top: 1px solid var(--gh-border-muted); }
+  @media (max-width: 1080px) {
+    .demo-shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .demo-toc { display: none; }
+  }
+  /* 小节锚点：hover 标题才出现，方便分享到某一节 */
+  .demo-main h2 { scroll-margin-top: 16px; }
+  .demo-anchor {
+    margin-left: 8px; color: var(--gh-fg-muted); font-weight: 400;
+    text-decoration: none; opacity: 0; transition: opacity var(--gh-dur-fast, .12s) ease;
+  }
+  .demo-main h2:hover .demo-anchor, .demo-anchor:focus-visible { opacity: 1; }
+  /* 首屏：版本、统计与快捷入口 */
+  .demo-hero {
+    padding: 20px 22px; border: 1px solid var(--gh-border);
+    border-radius: var(--gh-radius-lg, 12px); background: var(--gh-canvas-subtle);
+  }
+  .demo-hero__title { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0; font-size: 24px; letter-spacing: -.2px; }
+  .demo-hero__desc { margin: 10px 0 0; max-width: 76ch; font-size: 14px; line-height: 1.65; color: var(--gh-fg-muted); }
+  .demo-hero__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+  .demo-hero__stat {
+    display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px;
+    border: 1px solid var(--gh-border); border-radius: var(--gh-radius-pill, 999px);
+    background: var(--gh-canvas); font-size: 12px; color: var(--gh-fg-muted);
+  }
+  .demo-hero__stat b { color: var(--gh-fg); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .demo-hero__link { margin-left: 4px; font-size: 13px; color: var(--gh-accent); text-decoration: none; }
+  .demo-hero__link:hover { text-decoration: underline; }
+  /* 回到顶部 */
+  .demo-top {
+    position: fixed; right: 24px; bottom: 24px; width: 36px; height: 36px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--gh-border); border-radius: 50%;
+    background: var(--gh-canvas); color: var(--gh-fg-muted);
+    box-shadow: var(--gh-shadow); cursor: pointer;
+    opacity: 0; transform: translateY(8px); pointer-events: none;
+    transition: opacity var(--gh-dur-base, .15s) ease, transform var(--gh-dur-base, .15s) ease,
+                color var(--gh-dur-base, .15s) ease, border-color var(--gh-dur-base, .15s) ease;
+    z-index: 30;
+  }
+  .demo-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+  .demo-top:hover { color: var(--gh-fg); border-color: var(--gh-fg-muted); }
+  @media (prefers-reduced-motion: reduce) {
+    .demo-toc__item, .demo-anchor, .demo-top { transition: none; }
+  }
+</style>
+<script defer src="../dist/gh-ui.js"></script>
+<script>
+  // 记住手动选择的主题（demo 辅助功能，不属于组件库）
+  try {
+    const saved = localStorage.getItem('gh-theme');
+    if (saved) document.documentElement.dataset.ghTheme = saved;
+  } catch (_) { /* ignore */ }
+  // ?theme=light|dark 可直接指定，方便截图与分享
+  try {
+    const q = new URLSearchParams(location.search).get('theme');
+    if (q === 'light' || q === 'dark') document.documentElement.dataset.ghTheme = q;
+  } catch (_) { /* ignore */ }
+  function currentTheme() {
+    const h = document.documentElement;
+    return h.dataset.ghTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  function syncThemeButton() {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    const isDark = currentTheme() === 'dark';
+    btn.setAttribute('aria-label', isDark ? '切换到浅色主题' : '切换到深色主题');
+    btn.setAttribute('title', isDark ? '切换到浅色主题' : '切换到深色主题');
+    btn.innerHTML = '<gh-icon name="' + (isDark ? 'sun' : 'moon') + '"></gh-icon>';
+  }
+  function toggleTheme() {
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    GHUI.setTheme(next);
+    try { localStorage.setItem('gh-theme', next); } catch (_) { /* ignore */ }
+    syncThemeButton();
+  }
+</script>
+</head>
+<body>
+
+<gh-header>
+  <gh-container>
+    <gh-stack direction="row" align="center" gap="16">
+      <gh-icon name="mark-github" size="28"></gh-icon>
+      <a href="#" style="font-weight:500">gh-ui</a>
+      <a href="#sec-1">组件</a>
+      <a href="advanced.html">高级示例</a>
+      <gh-stack direction="row" align="center" gap="8" style="margin-left:auto">
+        <gh-btn id="theme-toggle" variant="invisible" size="icon" aria-label="切换主题" title="切换明暗主题" onclick="toggleTheme()">
+          <gh-icon name="moon"></gh-icon>
+        </gh-btn>
+        <gh-dropdown align="right">
+          <gh-btn variant="invisible" size="icon" aria-label="菜单"><gh-icon name="three-bars"></gh-icon></gh-btn>
+          <a href="#">设置</a><hr><a href="#">退出登录</a>
+        </gh-dropdown>
+        <gh-avatar size="26" src="avatar.svg"></gh-avatar>
+      </gh-stack>
+    </gh-stack>
+  </gh-container>
+</gh-header>
+
+<gh-container>
+  <div class="demo-shell">
+    <aside class="demo-toc" aria-label="组件目录">
+      <gh-input id="toc-filter" placeholder="筛选组件…（/）" icon="search" aria-label="筛选组件"></gh-input>
+      <nav class="demo-toc__list" id="toc-list"></nav>
+      <div class="demo-toc__tools">
+        <gh-btn size="sm" variant="invisible" id="code-expand">展开全部</gh-btn>
+        <gh-btn size="sm" variant="invisible" id="code-collapse">收起全部</gh-btn>
+      </div>
+    </aside>
+    <main class="demo-main">
+      <header class="demo-hero">
+        <h1 class="demo-hero__title">
+          gh-ui 组件演示
+          <code id="demo-version" style="font-size:12px;font-weight:400">v—</code>
+        </h1>
+        <p class="demo-hero__desc">
+          只需 <code>&lt;script src="gh-ui.js" defer&gt;&lt;/script&gt;</code> 一行引入，全部标签即刻生效。
+          组件优先用属性表达状态（<code>label</code> / <code>value</code> / <code>multiple</code> / <code>data-gh-open</code>…），
+          弹层类只写标签和选项，文案回填与开合由组件负责；<code>slot="tabs"</code> 可把 tab 行挂进 <code>gh-header</code>，
+          每个示例下面都能展开看实现代码，右上角可切换明暗主题。
+        </p>
+        <div class="demo-hero__row">
+          <span class="demo-hero__stat"><b id="stat-sections">—</b> 个小节</span>
+          <span class="demo-hero__stat"><b>111</b> 个图标</span>
+          <span class="demo-hero__stat"><b>0</b> 运行时依赖</span>
+          <a class="demo-hero__link" href="advanced.html">高级示例：GitHub Pull request 页 →</a>
+        </div>
+      </header>
+
+      <h2>按钮 gh-btn</h2>
+  <section class="row">
+    <gh-btn>默认</gh-btn>
+    <gh-btn variant="primary">主要</gh-btn>
+    <gh-btn variant="danger">危险</gh-btn>
+    <gh-btn variant="invisible">幽灵</gh-btn>
+    <gh-btn disabled>禁用</gh-btn>
+    <gh-btn variant="primary" size="sm">小号</gh-btn>
+    <gh-btn variant="primary" size="lg">大号</gh-btn>
+    <gh-btn><gh-icon name="star"></gh-icon> 带图标</gh-btn>
+  </section>
+
+  <h2>警告框 gh-alert</h2>
+  <section>
+    <gh-stack gap="8">
+      <gh-alert type="note">这是一条 <strong>note</strong> 提示。</gh-alert>
+      <gh-alert type="success">构建成功，共 42 个测试通过。</gh-alert>
+      <gh-alert type="warning">该配置将在下个版本废弃。</gh-alert>
+      <gh-alert type="danger" dismissible>部署失败，点击右侧关闭（可关闭 + gh:dismiss 事件）。</gh-alert>
+    </gh-stack>
+  </section>
+
+  <h2>标签 gh-label / 头像 gh-avatar</h2>
+  <section class="row">
+    <gh-label>默认</gh-label>
+    <gh-label color="#0969da">enhancement</gh-label>
+    <gh-label color="#1a7f37">bug 修复</gh-label>
+    <gh-label color="#cf222e">bug</gh-label>
+    <gh-label color="#8250df">P1</gh-label>
+    <gh-avatar size="24">舟</gh-avatar>
+    <gh-avatar size="32" src="avatar.svg" alt="示例头像"></gh-avatar>
+    <gh-avatar size="40" square src="avatar.svg" alt="示例头像"></gh-avatar>
+  </section>
+
+  <h2>标签页 gh-tabs</h2>
+  <section>
+    <gh-tabs id="demo-tabs">
+      <gh-tab panel="tab-readme"><gh-icon name="book"></gh-icon> 说明</gh-tab>
+      <gh-tab panel="tab-code" selected><gh-icon name="code"></gh-icon> 代码</gh-tab>
+      <gh-tab panel="tab-history"><gh-icon name="history"></gh-icon> 历史</gh-tab>
+    </gh-tabs>
+    <div id="tab-readme" hidden style="padding:16px 4px;font-size:14px">这是「说明」面板。</div>
+    <div id="tab-code" style="padding:16px 4px;font-size:14px">这是「代码」面板。支持左右方向键切换，切换时派发 <code>gh:tab-change</code> 事件。</div>
+    <div id="tab-history" style="padding:16px 4px;font-size:14px">这是「历史」面板。</div>
+    <p id="tab-log" style="font-size:13px;color:var(--gh-fg-muted)"></p>
+  </section>
+
+  <h2>弹层内 Tab gh-tabs flush + gh-tab-panel</h2>
+  <section>
+    <gh-popover id="clone-pop" placement="bottom-start" width="340px">
+      <gh-btn slot="trigger" variant="primary">
+        <gh-icon name="code"></gh-icon> Code <gh-icon name="triangle-down" size="12"></gh-icon>
+      </gh-btn>
+
+      <gh-tabs flush>
+        <gh-tab selected><gh-icon name="terminal"></gh-icon> Local</gh-tab>
+        <gh-tab-panel>
+          <gh-stack gap="14" style="padding:8px 0 4px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <gh-icon name="terminal" size="16"></gh-icon>
+              <strong style="font-size:14px">Clone</strong>
+              <span style="margin-left:auto"><gh-icon name="question" size="16"></gh-icon></span>
+            </div>
+            <gh-segmented expand aria-label="克隆方式">
+              <gh-segment value="https" selected>HTTPS</gh-segment>
+              <gh-segment value="ssh">SSH</gh-segment>
+              <gh-segment value="cli">GitHub CLI</gh-segment>
+            </gh-segmented>
+            <gh-alert type="warning" style="font-size:12px">
+              You don't have any public SSH keys in your GitHub account. You can
+              <a href="#">add a new public key</a>, or try cloning this repository via HTTPS.
+            </gh-alert>
+            <div style="display:flex;gap:6px;align-items:stretch">
+              <gh-input value="git@github.com:A03HCY/Quill.git" readonly style="font-family:var(--gh-mono);font-size:12px;flex:1"></gh-input>
+              <gh-copy-button class="gh-copy--fill" style="--gh-copy-size:34px" text="git@github.com:A03HCY/Quill.git"></gh-copy-button>
+            </div>
+            <div style="font-size:12px;color:var(--gh-fg-muted)">Use a password-protected SSH key.</div>
+            <hr style="border:0;border-top:1px solid var(--gh-border-muted);margin:0">
+            <gh-menu-item icon="mark-github" style="display:flex">Open in GitHub Copilot app</gh-menu-item>
+            <gh-menu-item icon="desktop-download">Open with GitHub Desktop</gh-menu-item>
+            <gh-menu-item icon="file-zip">Download ZIP</gh-menu-item>
+          </gh-stack>
+        </gh-tab-panel>
+
+        <gh-tab><gh-icon name="cpu"></gh-icon> Codespaces</gh-tab>
+        <gh-tab-panel hidden>
+          <gh-stack gap="10" style="padding:8px 0 4px">
+            <p style="font-size:13px;color:var(--gh-fg-muted);margin:0">在云端创建开发环境，几秒内开始编码。</p>
+            <gh-btn variant="primary" size="sm">Create codespace on main</gh-btn>
+          </gh-stack>
+        </gh-tab-panel>
+      </gh-tabs>
+    </gh-popover>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      <code>gh-tabs flush</code> + <code>gh-tab-panel</code>：tab 和面板写在一起、放进弹层，
+      面板跟着 tab 走（不用再在弹层外放 <code>div</code>）；<code>flush</code> 让 tab 栏通栏顶到弹层边缘。
+    </p>
+  </section>
+
+  <h2>对话框 gh-dialog</h2>
+  <section class="row">
+    <gh-btn data-gh-open="demo-dialog">打开对话框</gh-btn>
+    <gh-btn variant="primary" data-gh-open="invite-dialog">
+      表单弹窗（回车提交）
+    </gh-btn>
+    <gh-btn onclick="GHUI.prompt({title:'重命名分支',label:'分支名',value:'main',okText:'保存'}).then(v=>{ if(v!==null) GHUI.toast('已重命名为 ' + v,'ok'); })">
+      输入框弹窗 prompt
+    </gh-btn>
+  </section>
+  <gh-dialog id="invite-dialog" title="邀请成员" width="wide" ok-text="发送邀请" cancel-text="取消">
+    <gh-stack gap="14">
+      <gh-alert type="note">邀请链接 7 天内有效，对方接受后自动加入团队。</gh-alert>
+      <gh-field label="邮箱" hint="必填，按回车可直接提交">
+        <gh-input name="email" type="email" placeholder="name@example.com" required></gh-input>
+      </gh-field>
+      <gh-field label="角色">
+        <gh-select name="role">
+          <option value="member" selected>成员</option>
+          <option value="admin">管理员</option>
+        </gh-select>
+      </gh-field>
+    </gh-stack>
+  </gh-dialog>
+
+  <gh-dialog id="demo-dialog" title="确认发布" ok-text="确认发布">
+    确定要将该版本发布到生产环境吗？此操作可通过 <code>gh:open</code> / <code>gh:close</code> 事件监听。
+  </gh-dialog>
+
+  <h2>下拉菜单 gh-dropdown</h2>
+  <section class="row">
+    <gh-dropdown>
+      <gh-btn>分支 <gh-icon name="triangle-down"></gh-icon></gh-btn>
+      <gh-menu-item icon="git-branch" href="#">main</gh-menu-item>
+      <gh-menu-item icon="git-branch" href="#">develop</gh-menu-item>
+      <hr>
+      <gh-menu-item icon="plus">新建分支</gh-menu-item>
+    </gh-dropdown>
+    <gh-dropdown align="right">
+      <gh-btn variant="primary">操作 <gh-icon name="triangle-down"></gh-icon></gh-btn>
+      <gh-menu-item icon="copy" shortcut="Ctrl C" value="copy">复制链接</gh-menu-item>
+      <gh-menu-item icon="archive">归档仓库</gh-menu-item>
+      <hr>
+      <gh-menu-item icon="trash" danger>删除仓库</gh-menu-item>
+    </gh-dropdown>
+  </section>
+
+  <h2>菜单 gh-menu（分组 / 嵌套 / 当前项）</h2>
+  <section class="row" style="align-items:flex-start">
+    <gh-menu style="width:300px">
+      <gh-menu-item icon="home">Overview</gh-menu-item>
+      <div class="gh-menu__divider"></div>
+      <div class="gh-menu__heading">Findings</div>
+      <gh-menu-item icon="dependabot" expandable open>Dependabot</gh-menu-item>
+      <div class="gh-menu__sub">
+        <gh-menu-item active>Malware</gh-menu-item>
+        <gh-menu-item>Vulnerabilities</gh-menu-item>
+      </div>
+      <div class="gh-menu__divider"></div>
+      <div class="gh-menu__heading">Reporting</div>
+      <gh-menu-item icon="shield">Security policy</gh-menu-item>
+    </gh-menu>
+
+    <gh-box plain title="plain：嵌进侧栏" style="width:260px">
+      <gh-menu plain>
+        <gh-menu-item icon="shield-check" active>Security</gh-menu-item>
+        <gh-menu-item icon="gear">Settings</gh-menu-item>
+        <gh-menu-item icon="people">Members</gh-menu-item>
+        <div class="gh-menu__divider"></div>
+        <gh-menu-item icon="sign-out" danger>Sign out</gh-menu-item>
+      </gh-menu>
+    </gh-box>
+  </section>
+  <p data-no-code>菜单面板不再只是「一列按钮」：<code>.gh-menu__heading</code> 是分组小标题，<code>.gh-menu__divider</code>（或 <code>&lt;hr&gt;</code>）画通栏分隔线，<code>gh-menu-item expandable</code> 配一个 <code>.gh-menu__sub</code> 就是可折叠的下一级，<code>active</code> 显示为「灰底胶囊 + 左侧强调条」的当前项，顶层项与嵌套项的胶囊同宽，缩进只加在文字上，强调条落在同一条竖线上、与胶囊恒留 4px 缝（统一 3×20、行左缘外侧 7px）。选中子项后该组会自动收起（再点父项可重新展开）。<code>&lt;gh-menu&gt;</code> 是独立面板，加 <code>plain</code> 可去掉外壳直接嵌在侧栏或卡片里；放在 <code>gh-dropdown</code> / <code>gh-select</code> 弹层里仍可继续用 <code>div.gh-menu</code>。</p>
+
+  <h2>行状态 gh-row（当前项 / 选中 / 游标）</h2>
+  <section class="row" style="align-items:flex-start;gap:24px;flex-wrap:wrap">
+    <div style="width:320px">
+      <gh-menu>
+        <gh-menu-item icon="home">Overview</gh-menu-item>
+        <gh-menu-item icon="shield" active>Security</gh-menu-item>
+        <gh-menu-item icon="gear">Settings</gh-menu-item>
+        <gh-menu-item icon="people">Members</gh-menu-item>
+      </gh-menu>
+    </div>
+
+    <div style="width:340px">
+      <div id="row-demo" style="display:flex;flex-direction:column;gap:2px">
+        <div class="gh-row" tabindex="0"><gh-icon name="home" size="16"></gh-icon><span>Overview</span></div>
+        <div class="gh-row" tabindex="0"><gh-icon name="shield" size="16"></gh-icon><span>Security</span></div>
+        <div class="gh-row" tabindex="0"><gh-icon name="gear" size="16"></gh-icon><span>Settings</span></div>
+        <div class="gh-row" tabindex="0"><gh-icon name="people" size="16"></gh-icon><span>Members</span><span class="gh-label gh-label--success" style="margin-left:auto">选中</span></div>
+      </div>
+    </div>
+    <script>
+      (() => {
+        const setup = () => {
+          const box = document.getElementById('row-demo');
+          if (!box || !window.GHUI) return;
+          const rows = [...box.querySelectorAll('.gh-row')];
+          // 当前项：同一容器里互斥，自动写 aria-current + 灰底胶囊 + 左条
+          window.GHUI.current(rows[1]);
+          // 选中：可多项，浅底不带条
+          window.GHUI.selected(rows[3], true);
+          rows.forEach((row) => row.addEventListener('click', () => window.GHUI.current(row)));
+        };
+        if (document.readyState === 'loading') addEventListener('DOMContentLoaded', setup);
+        else setup();
+      })();
+    </script>
+  </section>
+  <p data-no-code>同一套行外观被 <code>gh-menu-item</code>、<code>gh-nav-item</code>、<code>gh-popover-item</code>、<code>gh-option</code>、<code>gh-list-item</code> 和自定义行共用：语义只认 <code>aria-current="page"</code>（当前项）、<code>aria-selected="true"</code>（选中）、<code>.is-cursor</code>（键盘游标），颜色与几何全部来自 <code>--gh-row-*</code> 令牌（<code>--gh-row-bg-current</code> / <code>--gh-row-bg-selected</code> / <code>--gh-row-bg-cursor</code> / <code>--gh-row-bar-color</code> / <code>--gh-row-bar-inset</code> / <code>--gh-row-height</code> / <code>--gh-row-gap</code> / <code>--gh-row-radius</code> …）。给任意元素加 <code>class="gh-row"</code> 就是一行：不用写一行 CSS，左侧强调条默认落在行左缘外侧 7px（3px 宽 → 与胶囊 4px 缝、20px 高），菜单 / 嵌套项 / plain / 侧栏展开与折叠 / 导航行 / 自定义行都是同一位置（条离容器内缘 5px、胶囊 12px）；弹层里的勾选列表不画条，选中与否只看 16px 复选框；面板左右内边距由 <code>--gh-menu-pad-x</code>（默认 12px）控制，侧栏轨道由 <code>--gh-sidebar-gutter</code>（16px）控制，容器内边距不足时改一个 <code>--gh-row-bar-inset</code> 即可。<br>JS：<code>GHUI.current(el, on?, { group })</code>、<code>GHUI.selected(el, on?)</code>、<code>GHUI.cursor(el, on?)</code>、<code>GHUI.moveCursor(scope, step)</code>、<code>GHUI.rowState(el)</code>、<code>GHUI.currentIn(scope)</code>；宿主组件传 <code>&lt;gh-menu-item&gt;</code> / <code>&lt;gh-nav-item&gt;</code> / <code>&lt;gh-popover-item&gt;</code> / <code>&lt;gh-list-item&gt;</code> 即可，属性与 ARIA 会一起同步，切换派发 <code>gh:current-change</code> / <code>gh:selection-change</code>。右侧那列是纯 <code>.gh-row</code> + 一个点击监听。</p>
+
+  <h2>侧栏 gh-sidebar（可折叠 icon rail）</h2>
+  <section>
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+      <div style="display:flex;height:452px;border:1px solid var(--gh-border);border-radius:10px;overflow:hidden">
+        <gh-sidebar id="demo-sidebar" collapsible style="border-right:0;height:100%">
+          <gh-menu plain>
+            <gh-menu-item icon="issue-opened" href="#">Issues</gh-menu-item>
+            <gh-menu-item icon="person" href="#">Assigned to me</gh-menu-item>
+            <gh-menu-item icon="smiley" href="#">Created by me</gh-menu-item>
+            <gh-menu-item icon="mention" href="#">Mentioned</gh-menu-item>
+            <gh-menu-item icon="clock" href="#">Recent activity</gh-menu-item>
+          </gh-menu>
+          <gh-menu plain>
+            <div class="gh-menu__item gh-sidebar__heading"><gh-icon name="stack"></gh-icon>Views</div>
+            <gh-menu-item icon="project" href="#" active>Projects</gh-menu-item>
+            <gh-menu-item icon="milestone" href="#">Milestones</gh-menu-item>
+            <gh-menu-item icon="tag" href="#">Labels</gh-menu-item>
+          </gh-menu>
+          <gh-menu plain slot="footer">
+            <gh-menu-item icon="comment-discussion">Feedback <span class="gh-sidebar__pill">Preview</span></gh-menu-item>
+          </gh-menu>
+        </gh-sidebar>
+      </div>
+
+      <div style="display:flex;height:452px;border:1px solid var(--gh-border);border-radius:10px;overflow:hidden">
+        <gh-sidebar collapsed style="border-right:0;height:100%">
+          <gh-menu plain>
+            <gh-menu-item icon="issue-opened" href="#">Issues</gh-menu-item>
+            <gh-menu-item icon="person" href="#">Assigned to me</gh-menu-item>
+            <gh-menu-item icon="smiley" href="#">Created by me</gh-menu-item>
+            <gh-menu-item icon="mention" href="#">Mentioned</gh-menu-item>
+            <gh-menu-item icon="clock" href="#">Recent activity</gh-menu-item>
+          </gh-menu>
+          <gh-menu plain>
+            <div class="gh-menu__item gh-sidebar__heading"><gh-icon name="stack"></gh-icon>Views</div>
+            <gh-menu-item icon="project" href="#" active>Projects</gh-menu-item>
+            <gh-menu-item icon="milestone" href="#">Milestones</gh-menu-item>
+            <gh-menu-item icon="tag" href="#">Labels</gh-menu-item>
+          </gh-menu>
+          <gh-menu plain slot="footer">
+            <gh-menu-item icon="comment-discussion">Feedback <span class="gh-sidebar__pill">Preview</span></gh-menu-item>
+          </gh-menu>
+        </gh-sidebar>
+      </div>
+    </div>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      <code>&lt;gh-sidebar collapsible&gt;</code> 把每个直接子节点当一组（组间自动分隔线），<code>slot="footer"</code> 钉在底部；
+      底部按钮切换 <code>collapsed</code> → 收成 64px 的 icon rail（每行收成 32×32 的小方块、分组标题只留图标、悬停用原生 tooltip），切换派发 <code>gh:sidebar-toggle</code>。
+      宽度用 CSS 变量 <code>--gh-sidebar-width</code> / <code>--gh-sidebar-rail</code>，文案可换 <code>label-collapse</code> / <code>label-expand</code>。
+      常配合 <code>gh-menu plain</code> + <code>gh-menu-item active</code> 使用（右侧是折叠态示例）。
+    </p>
+  </section>
+
+  <h2>输入补全 gh-autocomplete</h2>
+  <section>
+    <div style="max-width:560px">
+      <gh-autocomplete id="demo-complete" label="Filter" placeholder="is:open author:@me">
+        <gh-autocomplete-item value="has" icon="plus" prefix>Has</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:runner-type" icon="package">Runner type</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:runner-labels" icon="tag">Runner labels</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:avg-run-time" icon="clock">Avg run time minutes</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:failed-run" icon="x">Failure rate</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:job" icon="zap">Job</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:workflow" icon="workflow">Workflow</gh-autocomplete-item>
+        <gh-autocomplete-item value="has:avg-queue-time" icon="clock">Avg queue time minutes</gh-autocomplete-item>
+        <gh-autocomplete-item value="is" icon="list-unordered" prefix>Is</gh-autocomplete-item>
+        <gh-autocomplete-item value="is:open" icon="issue-opened">Open</gh-autocomplete-item>
+        <gh-autocomplete-item value="is:closed" icon="issue-closed">Closed</gh-autocomplete-item>
+        <gh-autocomplete-item value="is:merged" icon="git-merge">Merged</gh-autocomplete-item>
+        <gh-autocomplete-item value="author" icon="person" prefix>Author</gh-autocomplete-item>
+        <gh-autocomplete-item value="label" icon="tag" prefix>Label</gh-autocomplete-item>
+      </gh-autocomplete>
+    </div>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:10px 0 0">
+      输入 <code>ha</code> 只出 <b>Has</b>，选中后自动补成 <code>has:</code> 并接着列出候选；<code>↑ ↓</code> 选、<code>Enter</code> / <code>Tab</code> 确认。
+      候选按冒号分段匹配（token 段数 = 候选 value 段数），所以 <code>is</code> 只出 Is，<code>is:c</code> 只出 Closed。
+      前缀类加 <code>prefix</code> 属性（选中补冒号），值类选中后自动补空格；也可用 JS 设 <code>el.items = [{ value, label, icon }]</code>，
+      选中派发 <code>gh:autocomplete-select</code>（detail: value / label / text）。
+    </p>
+  </section>
+
+  <h2>时间线 gh-timeline</h2>
+  <section style="max-width:520px">
+    <gh-timeline>
+      <gh-timeline-item icon="git-branch" variant="accent">
+        <strong>羽田舟</strong> 创建了分支 <code>feature/gh-ui</code> · 3 小时前
+      </gh-timeline-item>
+      <gh-timeline-item icon="git-commit">
+        提交 <code>a1b2c3d</code>：实现 gh-grid 与 gh-stack 布局组件 · 2 小时前
+      </gh-timeline-item>
+      <gh-timeline-item icon="check" variant="success">
+        CI 通过，42 个测试全部绿色 · 1 小时前
+      </gh-timeline-item>
+      <gh-timeline-item icon="git-pull-request" variant="danger">
+        PR <strong>#7</strong> 被拒绝：缺少变更说明 · 30 分钟前
+      </gh-timeline-item>
+    </gh-timeline>
+
+    <gh-box plain title="Latest from our changelog" style="margin-top:20px">
+      <gh-timeline compact>
+        <gh-timeline-item time="11 hours ago">CodeQL 2.27.4 improves accuracy and query metadata</gh-timeline-item>
+        <gh-timeline-item time="12 hours ago">GitHub Copilot is now available in Xcode's coding assistant</gh-timeline-item>
+        <gh-timeline-item time="Yesterday">BYOK and enterprise custom models in the Copilot usage API</gh-timeline-item>
+        <gh-timeline-item time="Yesterday">Dependabot version updates support Agent Package Manager</gh-timeline-item>
+        <gh-timeline-item dot="none"><a class="demo-more" href="#">View changelog →</a></gh-timeline-item>
+      </gh-timeline>
+    </gh-box>
+  </section>
+
+  <h2>时间线 gh-timeline（富内容 / 评论卡片）</h2>
+  <section style="max-width:720px">
+    <gh-timeline>
+      <gh-timeline-item card avatar="avatar.svg" author="crodas">
+        <span slot="header"><strong>crodas</strong> opened <time>1m ago</time></span>
+        <gh-label slot="header-actions" color="#8250df">Collaborator</gh-label>
+        <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="More actions">
+          <gh-icon name="kebab-horizontal"></gh-icon>
+        </gh-btn>
+        <gh-md>
+A transport lives in a backend crate, and a backend crate cannot depend on `cdk`. `MintEvent` lives in `cdk::event`, so as things stand the event a bus would carry is out of reach of the code that would carry it.
+
+NUT-17 payloads are also not self-describing. Quote responses for different payment methods share field names, and `NotificationPayload::deserialize` is a deliberate hard error that points the caller at `deserialize_payload_for_kind`.
+
+A transport needs a sleep that works on wasm, where tokio has no timer driver and `cdk-common`'s tokio carries only the `sync` feature.
+        </gh-md>
+        <gh-btn slot="footer" size="sm">Add artifact</gh-btn>
+        <gh-btn slot="footer" size="icon" variant="invisible" aria-label="Add reaction">
+          <gh-icon name="smiley"></gh-icon>
+        </gh-btn>
+      </gh-timeline-item>
+
+      <gh-timeline-item icon="person">
+        <strong>crodas</strong> self-assigned this <time>1m ago</time>
+      </gh-timeline-item>
+
+      <gh-timeline-item icon="git-pull-request" variant="accent">
+        <strong>crodas</strong> added a parent issue <time>1m ago</time>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <gh-icon name="issue-opened" style="color:var(--gh-success)"></gh-icon>
+          <a href="#">Make NUT-17 notifications reach every instance of a mint</a>
+          <span style="color:var(--gh-fg-muted)">#2824</span>
+        </div>
+      </gh-timeline-item>
+
+      <gh-timeline-item icon="table" variant="accent">
+        <strong>crodas</strong> added this to <gh-label color="#0969da">CDK</gh-label> <time>1m ago</time>
+      </gh-timeline-item>
+
+      <!-- 嵌套 gh-box：项目 / 附件之类放卡片 -->
+      <gh-timeline-item icon="table" variant="muted">
+        <strong>github-project-automation</strong> moved this to <strong>Backlog</strong> in
+        <gh-label color="#0969da">CDK</gh-label> <time>1m ago</time>
+        <gh-box plain title="Backlog · CDK" style="margin-top:10px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+            <gh-icon name="issue-opened" style="color:var(--gh-success)"></gh-icon>
+            <a href="#">Make NUT-17 notifications reach every instance of a mint</a>
+          </div>
+        </gh-box>
+      </gh-timeline-item>
+
+      <!-- 自定义 marker 插槽：任意节点都能当左侧标记 -->
+      <gh-timeline-item>
+        <gh-avatar slot="marker" size="24" src="avatar.svg"></gh-avatar>
+        左侧标记用 <code>slot="marker"</code> 换成头像、状态点或任意元素 · 3 天前
+      </gh-timeline-item>
+    </gh-timeline>
+
+    <p data-no-code>
+      条目正文里可以直接串入 <code>&lt;gh-md&gt;</code>、<code>&lt;gh-box&gt;</code> 或任意 HTML；
+      加 <code>card</code> 让正文变成带边框的卡片，配合 <code>avatar</code> / <code>author</code> 就是 GitHub 的评论块。
+      四个插槽：<code>slot="marker"</code>（左侧标记）、<code>slot="header"</code>（作者 / 动作 / 时间）、
+      <code>slot="header-actions"</code>（徽章、菜单按钮）、<code>slot="footer"</code>（卡片内底部操作）。
+    </p>
+  </section>
+
+  <h2>时间线 gh-timeline（PR 对话：反应 / 提交 / 审查）</h2>
+  <section style="max-width:760px">
+    <gh-timeline>
+      <gh-timeline-item card avatar="avatar.svg" author="jordanfelle">
+        <span slot="header"><strong>jordanfelle</strong> commented <time>4 minutes ago</time></span>
+        <gh-label slot="header-actions">Owner</gh-label>
+        <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="More actions">
+          <gh-icon name="kebab-horizontal"></gh-icon>
+        </gh-btn>
+        <gh-md>
+Root cause of the red `Release / run on main` (`15f997c`, job "build installer (windows)"): `choco install nsis -y` got a 503 from the Chocolatey community feed, the step ignored the failed install and carried on, and the next step failed with the misleading `makensis is not recognized`. **CI itself was green.** The install step now retries (5 attempts, 15 s × attempt backoff) and fails right there, naming the real cause.
+
+Note: committed with `skip-yamllint`: ci.yml already trips yamllint's 80-column line-length rule on dozens of existing lines (the hook only fails because the file was touched), unrelated to this change.
+        </gh-md>
+        <gh-reactions slot="footer">
+          <gh-reaction emoji="😄"></gh-reaction>
+          <gh-reaction emoji="👍" count="1" active></gh-reaction>
+          <gh-reaction emoji="🎉" count="1"></gh-reaction>
+        </gh-reactions>
+      </gh-timeline-item>
+
+      <gh-timeline-item bare header-box icon="git-commit">
+        <gh-avatar slot="header" size="16" src="avatar.svg" alt="jordanfelle"></gh-avatar>
+        <span slot="header">CI: retry the Chocolatey installs (nsis, nasm) instead of failing on …</span>
+        <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="Commit actions">
+          <gh-icon name="kebab-horizontal"></gh-icon>
+        </gh-btn>
+        <span slot="header-actions" style="display:inline-flex;align-items:center;gap:4px;color:var(--gh-fg-muted)">
+          <gh-icon name="x" style="color:var(--gh-danger)"></gh-icon><code>684b8b7</code>
+        </span>
+      </gh-timeline-item>
+
+      <gh-timeline-item bare icon="eye">
+        <gh-avatar slot="header" size="16" src="bot.svg" alt="kilo-code-bot"></gh-avatar>
+        <span slot="header"><strong>kilo-code-bot</strong> Bot reviewed <time>2 minutes ago</time></span>
+        <a slot="header-actions" href="#">View reviewed changes</a>
+        <gh-file-list>
+          <gh-file-row path=".github/workflows/ci.yml" state="resolved"></gh-file-row>
+          <gh-file-row path=".github/workflows/ci.yml" state="resolved"></gh-file-row>
+          <gh-file-row path=".github/workflows/release.yml" state="resolved">
+            <div style="color:var(--gh-fg-muted)">install step: 5 attempts, 15 s × attempt backoff</div>
+          </gh-file-row>
+        </gh-file-list>
+      </gh-timeline-item>
+
+      <gh-timeline-item card author="kilo-code-bot">
+        <gh-avatar slot="marker" size="32" src="bot.svg" alt="kilo-code-bot"></gh-avatar>
+        <span slot="header"><strong>kilo-code-bot</strong> Bot commented <time>2 minutes ago</time> · edited ▾</span>
+        <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="More actions">
+          <gh-icon name="kebab-horizontal"></gh-icon>
+        </gh-btn>
+        <gh-md>
+## Code Review Roast 🔥
+
+**Verdict:** 3 issues found · **Recommendation:** address before merge
+        </gh-md>
+      </gh-timeline-item>
+    </gh-timeline>
+
+    <p data-no-code>
+      提交 / 审查这类轻量事件用 <code>bare</code>（标记只留图标、不画圆圈）+ <code>header-box</code>（标题行套虚线框）；
+      评论底部用 <code>&lt;gh-reactions&gt;</code> 放 <code>&lt;gh-reaction emoji count active&gt;</code>，
+      点一下自动 ±1 并派发 <code>gh:reaction</code>，末尾 <code>+</code> 按钮派发 <code>gh:reaction-add</code>；
+      审查变更用 <code>&lt;gh-file-list&gt;</code> + <code>&lt;gh-file-row path state&gt;</code>，
+      行内子节点是展开内容，点击行头切换 <code>open</code> 并派发 <code>gh:file-toggle</code>。
+      <code>state</code> 支持 resolved / added / removed / modified / renamed，也可用 <code>state-label</code> 自定义。
+    </p>
+  </section>
+
+  <h2>贡献活动 gh-contribution</h2>
+  <section>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:32px;align-items:start;max-width:820px">
+      <gh-contribution id="contrib-demo">
+        <gh-contribution-group label="November 2026">
+          <gh-contribution-item title="Created 5 commits in 1 repository" bars="5,4,1">
+            <gh-contribution-repo repo="A03HCY/TeamFlow" count="5"></gh-contribution-repo>
+          </gh-contribution-item>
+          <gh-contribution-item type="repository" title="Created 1 repository">
+            <gh-contribution-repo repo="A03HCY/TeamFlow" language="Python" date="Nov 2"></gh-contribution-repo>
+          </gh-contribution-item>
+        </gh-contribution-group>
+
+        <gh-contribution-group label="October 2026">
+          <gh-contribution-item title="Created 45 commits in 6 repositories" bars="23,10,6,3,2,1">
+            <gh-contribution-repo repo="A03HCY/ImageLabel" count="23"></gh-contribution-repo>
+            <gh-contribution-repo repo="CodonProject/codon-motif" count="10"></gh-contribution-repo>
+            <gh-contribution-repo repo="LAMNING/Vision" count="6"></gh-contribution-repo>
+            <gh-contribution-repo repo="CodonProject/orchify" count="3"></gh-contribution-repo>
+            <gh-contribution-repo repo="A03HCY/track-grade-sorter" count="2"></gh-contribution-repo>
+            <gh-contribution-repo repo="CodonProject/codon-model" count="1"></gh-contribution-repo>
+          </gh-contribution-item>
+          <gh-contribution-item type="repository" title="Created 2 repositories">
+            <gh-contribution-repo repo="A03HCY/track-grade-sorter" language="Python" date="Oct 28"></gh-contribution-repo>
+            <gh-contribution-repo repo="A03HCY/ImageLabel" language="Python" date="Oct 22"></gh-contribution-repo>
+          </gh-contribution-item>
+        </gh-contribution-group>
+
+        <gh-contribution-group label="September 2026">
+          <gh-contribution-item title="Created 32 commits in 3 repositories" bars="26,4,2">
+            <gh-contribution-repo repo="CodonProject/codon-model" count="26"></gh-contribution-repo>
+            <gh-contribution-repo repo="A03HCY/Learn-Everything" count="4"></gh-contribution-repo>
+            <gh-contribution-repo repo="A03HCY/VA" count="2"></gh-contribution-repo>
+          </gh-contribution-item>
+          <gh-contribution-item type="repository" title="Created 1 repository">
+            <gh-contribution-repo repo="A03HCY/VA" language="Python" date="Sep 7"></gh-contribution-repo>
+          </gh-contribution-item>
+        </gh-contribution-group>
+      </gh-contribution>
+
+      <gh-stack gap="2" style="padding-top:2px">
+        <gh-btn variant="primary" size="sm" style="justify-content:center">2026</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2025</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2024</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2023</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2022</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2021</gh-btn>
+        <gh-btn variant="invisible" size="sm" style="justify-content:center">2020</gh-btn>
+      </gh-stack>
+    </div>
+
+    <p data-no-code>
+      <code>&lt;gh-contribution&gt;</code> 里放多个 <code>&lt;gh-contribution-group label="November 2026"&gt;</code>，
+      自动画出「月份小标题 + 右侧延伸的分隔线」。每条 <code>&lt;gh-contribution-item&gt;</code> 由
+      <code>title</code> / <code>icon</code> / <code>type</code> 描述标题，<code>bars="23,10,6"</code> 在右侧生成提交分布条形图
+      （宽度按各仓库提交数占最大值的比例，颜色逐级变浅）；行用 <code>&lt;gh-contribution-repo repo="owner/name"
+      count="23" language="Python" date="Oct 28"&gt;</code> 生成仓库链接 + 提交数角标 + 语言圆点与日期。
+      右侧的「查看贡献」按钮可用 <code>action-icon</code> / <code>action-label</code> 定制、<code>no-action</code> 隐藏，
+      点击派发 <code>gh:contribution-action</code>。
+    </p>
+  </section>
+
+  <h2>容器 gh-box</h2>
+  <section style="max-width:520px">
+    <gh-box title="仓库说明">
+      <p style="margin:0 0 8px">gh-ui — GitHub 风格的自定义标签组件库。</p>
+      <div class="row" style="margin:0">
+        <gh-label color="#0969da">web-components</gh-label>
+        <gh-label color="#1a7f37">零依赖</gh-label>
+        <gh-icon name="star"></gh-icon><strong style="font-size:14px">1.2k</strong>
+      </div>
+    </gh-box>
+  </section>
+
+  <h2>容器 gh-box（自定义顶栏）</h2>
+  <section>
+    <gh-box>
+      <gh-stack slot="bar" direction="row" gap="4" align="center">
+        <gh-btn size="sm" variant="invisible" style="font-weight:600">Open <gh-label>0</gh-label></gh-btn>
+        <gh-btn size="sm" variant="invisible">Closed <gh-label>0</gh-label></gh-btn>
+      </gh-stack>
+      <gh-stack slot="bar-end" direction="row" gap="4" align="center">
+        <gh-btn size="sm" variant="invisible">Author <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+        <gh-btn size="sm">Labels <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+        <gh-btn size="sm" variant="invisible">Newest <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+        <gh-btn size="sm" variant="invisible" aria-label="列表视图"><gh-icon name="list-unordered"></gh-icon></gh-btn>
+      </gh-stack>
+      <p style="margin:0;font-size:14px;color:var(--gh-fg-muted)">没有匹配的 issue。调整筛选条件试试。</p>
+    </gh-box>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      子元素加 <code>slot="bar"</code>（左侧）/ <code>slot="bar-end"</code>（右侧）就能替换顶栏内容，
+      放 tabs、下拉、按钮都行；不写槽位时仍可用 <code>title</code> 出文字标题。
+    </p>
+    <gh-box id="box-tabs-demo" style="margin-top:16px">
+      <gh-stack slot="bar"><strong>仓库设置</strong></gh-stack>
+      <gh-btn slot="tabs-end" size="sm">New branch</gh-btn>
+      <gh-tabs slot="tabs">
+        <gh-tab panel="box-general" selected>General</gh-tab>
+        <gh-tab panel="box-access">Access</gh-tab>
+        <gh-tab panel="box-branches">Branches</gh-tab>
+      </gh-tabs>
+      <div id="box-general" style="font-size:14px;color:var(--gh-fg-muted)">仓库的基本设置、可见性、归档与删除。</div>
+      <div id="box-access" hidden style="font-size:14px;color:var(--gh-fg-muted)">协作者与访问权限。</div>
+      <div id="box-branches" hidden style="font-size:14px;color:var(--gh-fg-muted)">默认分支与分支保护规则。</div>
+    </gh-box>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      tab 也一样可以进 box：子元素加 <code>slot="tabs"</code>（通常是 <code>&lt;gh-tabs&gt;</code>），
+      就会挂成卡片顶部一整行，胶囊缩进对齐顶栏、分隔线通栏；同一行右侧放操作（按钮、下拉）用
+      <code>slot="tabs-end"</code>。面板用 <code>panel="外部 id"</code> 指向正文里的面板。
+      紧跟在顶栏后面时顶栏的底边线会让位，整张卡只留 tabs 下那一条分割线。
+    </p>
+  </section>
+
+  <h2>容器 gh-box（下滑固定顶栏）</h2>
+  <section>
+    <gh-box sticky id="box-sticky-demo" style="max-width:760px">
+      <gh-stack slot="bar" direction="row" gap="8" align="center">
+        <gh-icon name="book"></gh-icon><strong>README</strong>
+        <span style="color:var(--gh-fg-muted);font-size:13px">Apache-2.0 license</span>
+      </gh-stack>
+      <gh-stack slot="bar-end" direction="row" gap="4" align="center">
+        <gh-btn size="sm" variant="invisible" aria-label="编辑 README"><gh-icon name="pencil"></gh-icon></gh-btn>
+        <gh-btn size="sm" variant="invisible" aria-label="更多操作"><gh-icon name="kebab-horizontal"></gh-icon></gh-btn>
+      </gh-stack>
+      <div style="font-size:14px;line-height:1.7">
+        <h3 style="margin:0 0 12px;font-size:24px">Codon</h3>
+        <p style="margin:0 0 12px;color:var(--gh-fg-muted)">往下滚动这一节，你会看到卡片的顶栏（README / license / 右侧操作）一直吸附在视口顶部，直到卡片正文滚完才跟着离开。</p>
+        <h4 style="margin:0 0 8px;font-size:16px">快速原型</h4>
+        <p style="margin:0 0 8px">用干净的、可组合的 building block 拼出自定义模型，不必从零写一遍训练循环：</p>
+        <ul style="margin:0 0 12px;padding-left:22px;color:var(--gh-fg)">
+          <li><strong>Attention 变体</strong>：GQA、QK Norm、K=V Attention、Gated Attention 开箱可用。</li>
+          <li><strong>灵活的归一化</strong>：RMSNorm、Zero-Centered RMSNorm 与 Conditional 版本。</li>
+          <li><strong>位置编码</strong>：RoPE、ALiBi、相对位置，一行配置切换。</li>
+          <li><strong>MoE</strong>：Top-k 路由、负载均衡损失、专家并行都在同一套接口下。</li>
+        </ul>
+        <p style="margin:0 0 12px">每个模块只声明「输入形状 → 输出形状」和参数，剩下的并行切分、混合精度、激活重算由框架统一处理，所以同一个模型既能在单卡跑，也能直接扩展到多机多卡。</p>
+        <p style="margin:0 0 12px">滚动到这里时，顶栏已经贴上去了 —— 它用 <code>position: sticky</code> 实现，卡片底边到达视口顶部之前会一直跟着你。</p>
+        <p style="margin:0 0 0;color:var(--gh-fg-muted)">示例正文到此为止：再往下就是下一页内容，顶栏会随卡片一起离开。</p>
+      </div>
+    </gh-box>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      卡片加 <code>sticky</code>：下滑时顶栏吸附在视口顶部，吸附期间带上 <code>.is-stuck</code>（去掉上圆角，保持和卡片一样的平面外观，不加投影）。
+      页面有固定导航时用 <code>sticky-offset="56px"</code> 或 <code>--gh-box-sticky-top</code> 让出高度。
+    </p>
+
+    <gh-box sticky id="box-sticky-tabs" style="max-width:760px;margin-top:20px">
+      <gh-stack slot="bar" direction="row" gap="8" align="center">
+        <gh-icon name="book"></gh-icon><strong>README</strong>
+      </gh-stack>
+      <gh-tabs slot="tabs">
+        <gh-tab panel="sticky-readme" selected>说明</gh-tab>
+        <gh-tab panel="sticky-license">许可证</gh-tab>
+      </gh-tabs>
+      <div id="sticky-readme" style="font-size:14px;line-height:1.7">
+        <p style="margin:0 0 10px">顶栏下面的 tabs 行也会一起吸附：它贴在顶栏下沿，顶栏高度由组件量出来写进 <code>--gh-box-bar-h</code>，所以换行、改字号都不会错位。</p>
+        <p style="margin:0 0 10px">切到「许可证」再往下滚，顶栏和 tabs 依然固定在顶部，卡片正文照常滚动。</p>
+        <p style="margin:0 0 10px;color:var(--gh-fg-muted)">下面这些段落只是把卡片撑高，方便观察吸附效果。</p>
+        <p style="margin:0 0 10px">stage graph 的调度器会把每个 stage 的依赖做拓扑排序，遇到环直接抛错；每个 stage 只声明输入、输出和依赖，失败时只重跑下游。</p>
+        <p style="margin:0 0 10px">渲染管线拆开之后，首屏渲染从 412ms 降到 358ms，主要收益来自跳过没有变化的 stage。</p>
+        <p style="margin:0 0 10px">调试时打开 <code>--debug-pipeline</code>，每个 stage 的耗时会被打印成一棵依赖树。</p>
+        <p style="margin:0">继续滚动，直到卡片底边出现，顶栏就会跟着卡片一起离开视口。</p>
+      </div>
+      <div id="sticky-license" hidden style="font-size:14px;line-height:1.7">
+        <p style="margin:0 0 10px">Apache-2.0：允许商用、修改与再分发，需保留版权与许可声明。</p>
+        <p style="margin:0 0 10px">切换 tab 后卡片高度变化，吸附位置会在下一次滚动时重新计算。</p>
+        <p style="margin:0;color:var(--gh-fg-muted)">这一层同样是卡片正文，可继续往下滚来观察顶栏与 tabs 的固定行为。</p>
+      </div>
+    </gh-box>
+  </section>
+
+  <h2>设置列表 gh-feature / 提示卡 gh-callout</h2>
+  <section>
+    <p data-no-code style="margin:0 0 8px;font-size:12px;color:var(--gh-fg-muted)">形态一：右侧控件（General 设置）</p>
+    <div class="gh-features" style="max-width:820px">
+      <gh-feature title="Review effort level" description="Controls the depth of analysis when Copilot reviews pull requests.">
+        <gh-select-menu slot="control" variant="invisible" value="balanced" aria-label="Review effort level">
+          <option value="balanced">Default (Balanced)</option>
+          <option value="thorough">Thorough</option>
+          <option value="quick">Quick</option>
+        </gh-select-menu>
+      </gh-feature>
+      <gh-feature title="Maximum review effort" description="Limits the review effort Copilot can use in this repository. Organization and enterprise limits still apply.">
+        <gh-select-menu slot="control" variant="invisible" value="none" aria-label="Maximum review effort">
+          <option value="none">No limit</option>
+          <option value="low">Low</option>
+        </gh-select-menu>
+      </gh-feature>
+      <gh-feature title="Allow Copilot to use MCP tools when reviewing pull requests" description="Copilot code review uses the tools from your MCP servers during reviews.">
+        <gh-switch slot="control" status checked name="mcp"></gh-switch>
+      </gh-feature>
+      <gh-feature title="Use custom instructions" description="Copilot references instruction files in this repository. Organization custom instructions apply regardless of this setting.">
+        <gh-switch slot="control" status checked name="instructions"></gh-switch>
+      </gh-feature>
+    </div>
+
+    <p data-no-code style="margin:20px 0 8px;font-size:12px;color:var(--gh-fg-muted)">形态二：复选框开关 + 展开内容（Features 设置）</p>
+    <div class="gh-features" style="max-width:820px">
+      <gh-feature checkbox title="Wikis" description="Wikis host documentation for your repository.">
+        <gh-callout icon="book" title="Upgrade or make this repository public to enable Wikis" description="GitHub Wikis is a simple way to let others contribute content. Any GitHub user can create and edit pages to use for documentation, examples, support, or anything you wish.">
+          <gh-btn slot="action" variant="primary" size="sm">Upgrade</gh-btn>
+        </gh-callout>
+      </gh-feature>
+      <gh-feature checkbox checked title="Issues" description="Issues integrate lightweight task tracking into your repository. Keep projects on track with issue labels and milestones, and reference them in commit messages." collapse>
+        <gh-field label="Issue permissions" hint="If restricted, issues will still be readable by everyone who can see this repository.">
+          <gh-select>
+            <option>Creation allowed by: All users</option>
+            <option>Only collaborators</option>
+          </gh-select>
+        </gh-field>
+        <gh-callout title="Get organized with issue templates" description="Give contributors issue templates that help you cut through the noise and help them push your project forward.">
+          <gh-btn slot="action" variant="primary" size="sm">Set up templates</gh-btn>
+        </gh-callout>
+      </gh-feature>
+      <gh-feature checkbox title="Sponsorships" description="Sponsorships help your community know how to financially support your repository.">
+        <gh-callout title="Display a “Sponsor” button" description="Add links to GitHub Sponsors or third-party methods your repository accepts for financial contributions to your project.">
+          <gh-btn slot="action" variant="primary" size="sm">Set up sponsor button</gh-btn>
+        </gh-callout>
+      </gh-feature>
+      <gh-feature checkbox title="Discussions" description="Discussions is the space for your community to have conversations, ask questions and post answers without opening issues.">
+        <gh-callout title="Get started with Discussions" description="Create a space for your community to have conversations, ask questions and post answers without opening issues.">
+          <gh-btn slot="action" variant="primary" size="sm">Set up Discussions</gh-btn>
+        </gh-callout>
+      </gh-feature>
+    </div>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      <code>gh-feature</code> 一行 = 标题 + 说明 + 右侧 <code>slot="control"</code> 控件 + 展开区子节点；
+      加 <code>checkbox</code> 显示复选框（点标题也能勾选，变化派发 <code>gh:feature-change</code>），
+      再配 <code>collapse</code> 时未勾选自动收起展开区。<code>gh-callout</code> 是浅蓝提示卡，
+      右侧按钮放 <code>slot="action"</code>：卡片够宽时与正文同一行，卡片窄于 480px 时自动折到正文下面、更窄时按钮铺满整行。
+      多行外套 <code>.gh-features</code> 即得圆角边框与 1px 分隔线。
+    </p>
+  </section>
+
+  <h2>提示卡 gh-callout（形态 / DIY）</h2>
+  <section style="max-width:900px">
+    <gh-callout bordered badge variant="warning" icon="tag" title="Level up your tag protections with Repository Rules">
+      <p slot="description">Protected tags are being deprecated. To continue protecting tags, please migrate to a tag ruleset by August 30th. You can learn more about the sunset in our <a href="#">changelog</a> and can get started now by migrating to rulesets.</p>
+    </gh-callout>
+
+    <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px">
+      <gh-callout icon="book" title="默认 info：浅蓝填充" description="设置页里那种说明块，图标 24px，右侧可放 slot=&quot;action&quot; 按钮。">
+        <gh-btn slot="action" variant="primary" size="sm">Set up templates</gh-btn>
+      </gh-callout>
+      <gh-callout variant="success" icon="check" title="success：绿色" description="操作完成后的成功提示。"></gh-callout>
+      <gh-callout variant="danger" icon="alert" title="danger：红色" description="删除、不可恢复操作的警示。"></gh-callout>
+      <gh-callout dense variant="neutral" icon="info" title="neutral + dense：紧凑" description="dense 收窄内边距，neutral 用中性灰，适合嵌在列表里。"></gh-callout>
+      <gh-callout style="--gh-callout-bg:color-mix(in srgb, #8250df 10%, var(--gh-canvas));--gh-callout-icon-bg:color-mix(in srgb, #8250df 20%, var(--gh-canvas));--gh-callout-icon-fg:color-mix(in srgb, #8250df 75%, var(--gh-fg));--gh-callout-border:color-mix(in srgb, #8250df 32%, var(--gh-canvas));--gh-callout-radius:16px" icon="sparkle" title="DIY：直接在标签上改 CSS 变量" description="背景、图标底色/前景、描边、圆角都能覆盖，不用新增 variant；颜色混 token 就能自动跟随浅/暗主题。">
+        <gh-btn slot="action" size="sm">了解</gh-btn>
+      </gh-callout>
+    </div>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+      形态：<code>variant="info|success|warning|danger|neutral"</code> 换语义色，<code>bordered</code> 改成白底描边（说明转 muted、链接蓝字下划线），
+      再加 <code>badge</code> 图标就装进 32px 圆形底，<code>dense</code> 收紧内边距。
+      DIY：<code>slot="icon"</code> 换任意图标节点、<code>slot="description"</code> 写富文本（可含链接），
+      颜色用 <code>--gh-callout-bg / --gh-callout-border / --gh-callout-icon-bg / --gh-callout-icon-fg / --gh-callout-radius / --gh-callout-pad</code> 覆盖。
+    </p>
+  </section>
+
+  <h2>页面布局 gh-container / gh-grid / gh-stack</h2>
+  <section>
+    <gh-grid cols="4" gap="12" class="demo-grid">
+      <div>span 1</div>
+      <div span="2">span 2（跨两列）</div>
+      <div>span 1</div>
+      <div>span 1</div>
+      <div span="3">span 3（跨三列）</div>
+      <div>span 1</div>
+    </gh-grid>
+    <div class="row">
+      <gh-stack direction="row" gap="8" align="center">
+        <gh-icon name="rocket"></gh-icon>
+        <span style="font-size:14px">上面就是一个 gh-stack row：图标 + 文字水平排列</span>
+      </gh-stack>
+    </div>
+    <p style="font-size:13px;color:var(--gh-fg-muted)">
+      整个页面本身就是布局示例：外层 <code>gh-container</code>、顶部 <code>gh-header</code>、
+      各区块间用 <code>gh-stack</code> 控制间距。
+    </p>
+  </section>
+
+  <h2 id="account-nav">侧栏账号 gh-account / 导航 gh-nav-item</h2>
+  <section>
+    <gh-stack direction="row" gap="16" align="start" wrap>
+      <div style="width:264px;padding:8px;border:1px solid var(--gh-border);border-radius:8px;background:var(--gh-canvas-subtle)">
+        <gh-account id="demo-account" name="A03HCY" subtitle="Your personal account" src="avatar.svg"></gh-account>
+        <gh-nav-item icon="home" active>首页</gh-nav-item>
+        <gh-nav-item icon="globe">动态</gh-nav-item>
+      </div>
+      <div id="acct-teamflow" style="width:264px;padding:8px;border:1px solid var(--gh-border);border-radius:8px;background:var(--gh-canvas-subtle)">
+        <gh-account name="羽田舟" subtitle="TeamFlow 组织" src="avatar.svg" action-icon="chevron-down"></gh-account>
+        <gh-nav-item icon="issue-opened" count="12">事项</gh-nav-item>
+        <gh-nav-item icon="calendar">日程</gh-nav-item>
+        <gh-nav-item icon="gear">设置</gh-nav-item>
+        <!-- 右侧切换按钮点开一个自定义浮层（账户选择） -->
+        <gh-layer anchor="#acct-teamflow .gh-account__switch" placement="bottom-end" width="248" menu close-on-item>
+          <div class="gh-menu">
+            <gh-menu-item icon="person" shortcut="当前">羽田舟</gh-menu-item>
+            <gh-menu-item icon="person">A03HCY</gh-menu-item>
+            <gh-menu-item icon="plus">添加账号…</gh-menu-item>
+            <gh-menu-item icon="gear">管理账号</gh-menu-item>
+          </div>
+        </gh-layer>
+      </div>
+      <div style="width:264px;padding:8px;border:1px solid var(--gh-border);border-radius:8px;background:var(--gh-canvas-subtle)">
+        <gh-account name="没有切换按钮" subtitle="no-action 只当账号行" no-action></gh-account>
+        <gh-nav-item icon="home">首页</gh-nav-item>
+        <gh-nav-item icon="globe">动态</gh-nav-item>
+      </div>
+    </gh-stack>
+    <gh-stack direction="row" gap="10" align="center" style="margin-top:16px">
+      <gh-btn id="open-nav-drawer">
+        <gh-icon name="three-bars"></gh-icon>打开导航抽屉
+      </gh-btn>
+      <span style="font-size:12px;color:var(--gh-fg-muted)">variant="nav"：内容铺满、分组用 &lt;hr&gt; 分隔</span>
+    </gh-stack>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      <code>gh-account</code>：<code>name</code> / <code>subtitle</code> / <code>src</code>（没有 src 时取名字首字母），
+      右侧按钮可用 <code>action-icon</code> 换图标、<code>action-label</code> 换提示文案，<code>no-action</code> 隐藏按钮；
+      整行派发 <code>gh:account</code>，右侧按钮派发 <code>gh:switch</code>；
+      <code>gh-nav-item</code> 的选中态是圆角底块 + 左侧 3px 指示条，<code>count</code> 在右侧显示计数，
+      <code>active</code> 同时写入 <code>aria-current="page"</code>。
+    </p>
+  </section>
+
+  <gh-drawer id="nav-drawer" variant="nav" side="left" width="320px" label="主导航">
+    <gh-icon slot="head" name="mark-github" size="24"></gh-icon>
+    <gh-nav-item icon="home" active>Home</gh-nav-item>
+    <gh-nav-item icon="globe">Feed</gh-nav-item>
+    <gh-nav-item icon="issue-opened">All issues</gh-nav-item>
+    <gh-nav-item icon="git-pull-request">All pull requests</gh-nav-item>
+    <gh-nav-item icon="repo">All repositories</gh-nav-item>
+    <gh-nav-item icon="project">Projects</gh-nav-item>
+    <gh-nav-item icon="comment-discussion">Discussions</gh-nav-item>
+    <gh-nav-item icon="code">Codespaces</gh-nav-item>
+    <gh-nav-item icon="workflow">Copilot</gh-nav-item>
+    <hr>
+    <gh-nav-item icon="rocket">Explore</gh-nav-item>
+    <gh-nav-item icon="gift">Marketplace</gh-nav-item>
+    <gh-nav-item icon="zap">MCP registry</gh-nav-item>
+    <hr>
+    <gh-nav-title action-icon="search" action-label="搜索仓库">Top repositories</gh-nav-title>
+    <gh-nav-item><gh-avatar slot="media" size="16">C</gh-avatar>CodonProject/codon-model</gh-nav-item>
+    <gh-nav-item><gh-avatar slot="media" size="16">A</gh-avatar>A03HCY/Orbit</gh-nav-item>
+    <gh-nav-item><gh-avatar slot="media" size="16">A</gh-avatar>A03HCY/Learn-Everything</gh-nav-item>
+    <gh-nav-item><gh-avatar slot="media" size="16">A</gh-avatar>A03HCY/ImageLabel</gh-nav-item>
+    <gh-nav-item><gh-avatar slot="media" size="16">C</gh-avatar>CodonProject/orchify</gh-nav-item>
+    <gh-btn variant="invisible" size="sm">Show more</gh-btn>
+  </gh-drawer>
+
+  <h2 id="composer">AI 输入框 gh-composer</h2>
+  <section style="max-width:880px">
+    <gh-composer id="demo-composer" placeholder="Ask anything or type @ to add context">
+      <gh-select-menu slot="start" icon="comment" label="Ask" value="ask">
+        <option value="ask">Ask</option>
+        <option value="agent">Agent</option>
+        <option value="debug">Debug</option>
+      </gh-select-menu>
+
+      <gh-select-menu slot="start" icon="repo" label="All repositories" multiple searchable
+                      summary="{count} repositories" width="460px" max-height="220px"
+                      heading="Select a repository" search-placeholder="Search">
+        <option value="codon-model">CodonProject/codon-model</option>
+        <option value="orbit">A03HCY/Orbit</option>
+        <option value="learn">A03HCY/Learn-Everything</option>
+        <option value="image-label">A03HCY/ImageLabel</option>
+        <option value="orchify">CodonProject/orchify</option>
+        <option value="design-system">TeamFlow/design-system</option>
+        <option value="docs">TeamFlow/docs</option>
+      </gh-select-menu>
+
+      <gh-btn slot="start" size="icon" aria-label="添加上下文"><gh-icon name="plus"></gh-icon></gh-btn>
+
+      <gh-select-menu slot="end" icon="sparkle" label="Auto" placement="top-end" width="360px" max-height="360px">
+        <div class="demo-banner">Upgrade to access more models and higher limits.</div>
+        <option value="auto" data-icon="sparkle" selected>Auto</option>
+        <optgroup label="Fast and cost-effective">
+          <option value="gpt-6-luna" data-icon="cpu">GPT-6 Luna</option>
+          <option value="gpt-54-mini" data-icon="cpu">GPT-5.4 mini</option>
+          <option value="claude-haiku" data-icon="shield-check">Claude Haiku 5.5</option>
+        </optgroup>
+        <optgroup label="Versatile and highly intelligent">
+          <option value="kimi-k3" data-icon="sparkle">Kimi K3</option>
+          <option value="gpt-61-terra" data-icon="cpu">GPT-6.1 Terra</option>
+          <option value="gpt-56-sol" data-icon="cpu">GPT-5.6 Sol</option>
+          <option value="sonnet-55" data-icon="shield-check">Claude Sonnet 5.5</option>
+          <option value="sonnet-5" data-icon="shield-check">Claude Sonnet 5</option>
+        </optgroup>
+      </gh-select-menu>
+
+      <gh-select-menu slot="end" label="Optimized for: Balance" label-prefix="Optimized for: " placement="top-end" width="360px">
+        <option value="efficiency" data-desc="Prioritizes speed and efficiency">Efficiency</option>
+        <option value="balance" data-desc="Balances speed and intelligence" selected>Balance</option>
+        <option value="intelligence" data-desc="Prioritizes intelligence">Intelligence</option>
+      </gh-select-menu>
+
+      <gh-popover slot="end" placement="top-end" width="320px" flush>
+        <gh-btn slot="trigger" size="icon" variant="invisible" aria-label="AI 额度">
+          <gh-icon name="check-circle"></gh-icon>
+        </gh-btn>
+        <div class="demo-credits">
+          <div class="demo-credits__title">Included credits <gh-icon name="info" size="14"></gh-icon></div>
+          <div class="demo-credits__row"><span>Resets on Dec 1</span><span>2 / 200 AI credits</span></div>
+          <div class="demo-credits__note">Refresh for latest usage</div>
+          <div class="demo-credits__bar"><span style="width:1%"></span></div>
+          <gh-btn class="demo-credits__upgrade">Upgrade</gh-btn>
+        </div>
+      </gh-popover>
+    </gh-composer>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      <code>gh-select-menu</code> 把「按钮 + 弹层 + 列表」收成一个标签：<code>label</code> 是默认文案，
+      选中后自动回填；<code>multiple</code> 多选时用 <code>summary</code> 模板（1 项直接显示名称）；
+      <code>label-prefix</code> 保留前缀（Optimized for: …）；<code>searchable</code> / <code>width</code> /
+      <code>heading</code> 原样透传给列表。选项可以直接写原生 <code>&lt;option&gt;</code> /
+      <code>&lt;optgroup&gt;</code>，要图标或描述时加 <code>data-icon</code> / <code>data-desc</code>。
+    </p>
+  </section>
+
+  <h2 id="editor">Markdown 编辑器 gh-editor</h2>
+  <section style="max-width:820px">
+    <gh-editor id="demo-editor" placeholder="Add your comment here…" submit-label="Comment"
+               value="这里可以写 **Markdown**：&#10;&#10;- 列表项&#10;- 行内 `code`&#10;&#10;> 引用块&#10;&#10;提交前切到 Preview 看一眼。"></gh-editor>
+
+    <gh-editor id="demo-editor-locked" style="margin-top:16px" disabled min-height="64" no-submit
+               placeholder="这个讨论已锁定，不能再留言" value="由维护者于昨天锁定"></gh-editor>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      顶部的 Write / Preview 就是 <code>gh-tabs</code>：切到 Preview 时组件用 <code>gh-md</code>
+      把当前文本渲染成 HTML。工具条按钮不依赖第三方编辑器——它们只操作 textarea 的选区
+      （<code>**粗体**</code>、行首 <code>## </code>、<code>- [ ] </code>、链接、@、# 等），
+      也支持 <code>Ctrl/⌘ + Enter</code> 提交。
+      事件：<code>gh:input</code> / <code>gh:submit</code>（detail <code>{ value, name }</code>）。
+    </p>
+  </section>
+
+  <h2 id="filter-menu">筛选菜单（分组单选 / 多选）</h2>
+  <section style="max-width:520px">
+    <gh-select-menu icon="sliders" label="Filters" fixed-label width="320px" max-height="560px">
+      <gh-icon slot="caret" name="chevron-down"></gh-icon>
+      <optgroup label="Pull requests to include" multiple>
+        <option selected>Authored</option>
+        <option selected>Mentioned</option>
+        <option selected>Review requested</option>
+        <option selected>Reviewed</option>
+      </optgroup>
+      <optgroup label="Number of results">
+        <option selected>3</option>
+        <option>6</option>
+        <option>9</option>
+        <option>12</option>
+      </optgroup>
+      <optgroup label="Maximum age of results">
+        <option>1 month</option>
+        <option>3 months</option>
+        <option selected>1 year</option>
+        <option>No maximum</option>
+      </optgroup>
+    </gh-select-menu>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      分组用 <code>&lt;optgroup label="…"&gt;</code>：带 <code>multiple</code> 的是多选组，不带的是单选组，
+      组与组互不影响。<code>fixed-label</code> 让按钮文案恒为「Filters」不随选择变化，
+      分组菜单默认不自动收起，适合连续勾选。
+      这里的箭头用 <code>&lt;gh-icon slot="caret" name="chevron-down"&gt;</code> 替换了默认三角，
+      <code>gh-select-menu</code> / <code>gh-select</code> / <code>gh-combobox</code> /
+      <code>gh-split-button</code> 都支持 <code>slot="caret"</code>，展开时统一旋转 180°。
+    </p>
+  </section>
+
+  <h2 id="app-skeleton">应用骨架 gh-app / gh-side / gh-topbar（参考 TeamFlow）</h2>
+  <section>
+    <gh-app style="min-height:360px;border:1px solid var(--gh-border);border-radius:8px;overflow:hidden">
+      <gh-side>
+        <gh-account name="羽田舟" subtitle="个人账号" src="avatar.svg"></gh-account>
+        <gh-nav-title>规划</gh-nav-title>
+        <gh-nav-item icon="home" active>总览</gh-nav-item>
+        <gh-nav-item icon="issue-opened" count="12">事项</gh-nav-item>
+        <gh-nav-item icon="calendar">日程</gh-nav-item>
+        <gh-nav-item icon="git-branch">路线图</gh-nav-item>
+        <gh-nav-title>团队</gh-nav-title>
+        <gh-nav-item icon="people">成员</gh-nav-item>
+        <gh-nav-item icon="gear">设置</gh-nav-item>
+        <div slot="foot">
+          <gh-stack direction="row" align="center" gap="8">
+            <gh-avatar size="24">舟</gh-avatar>
+            <div style="font-size:13px;font-weight:500">羽田舟</div>
+          </gh-stack>
+        </div>
+      </gh-side>
+      <div>
+        <gh-topbar>
+          <gh-crumbs><a href="#">团队空间</a><strong>工作台总览</strong></gh-crumbs>
+        </gh-topbar>
+        <div style="padding:20px">
+          <gh-page-head title="工作台总览" desc="欢迎回来，羽田舟">
+            <gh-btn size="sm"><gh-icon name="sync"></gh-icon>刷新</gh-btn>
+            <gh-btn variant="primary" size="sm"><gh-icon name="plus"></gh-icon>新建事项</gh-btn>
+          </gh-page-head>
+          <gh-grid cols="3" gap="12">
+            <gh-stat label="进行中" value="12" unit="项" tone="accent" icon="issue-opened" foot="较上周 +3"></gh-stat>
+            <gh-stat label="已完成" value="48" unit="项" tone="ok" icon="check" foot="本周关闭 9 个"></gh-stat>
+            <gh-stat label="逾期" value="3" unit="项" tone="warn" icon="alert" foot="需要关注"></gh-stat>
+          </gh-grid>
+          <div style="margin-top:12px">
+            <gh-box title="里程碑：v1.0 发布">
+              <gh-stack gap="10">
+                <gh-stack direction="row" align="center" gap="12">
+                  <strong style="font-size:13px">核心功能</strong>
+                  <gh-progress value="72" tone="success" style="flex:1"></gh-progress>
+                  <span style="font-size:12px;color:var(--gh-fg-muted)">72%</span>
+                </gh-stack>
+                <gh-stack direction="row" align="center" gap="12">
+                  <strong style="font-size:13px">文档整理</strong>
+                  <gh-progress value="35" thin style="flex:1"></gh-progress>
+                  <span style="font-size:12px;color:var(--gh-fg-muted)">35%</span>
+                </gh-stack>
+              </gh-stack>
+            </gh-box>
+          </div>
+        </div>
+      </div>
+    </gh-app>
+  </section>
+
+  <h2>导航条变体 gh-header</h2>
+  <section>
+    <gh-stack gap="10">
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:0">默认：深色导航条（GitHub 风格，亮色主题下也保持深色）</p>
+      <gh-header>
+        <gh-container>
+          <gh-stack direction="row" align="center" gap="16">
+            <gh-icon name="mark-github" size="24"></gh-icon>
+            <strong style="font-size:14px">gh-ui</strong>
+            <a href="#">组件</a>
+            <a href="#">文档</a>
+            <gh-btn variant="invisible" size="sm" style="margin-left:auto">登录</gh-btn>
+          </gh-stack>
+        </gh-container>
+      </gh-header>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:6px 0 0"><code>variant="light"</code>：强制浅色，深色主题下也是白底</p>
+      <gh-header variant="light">
+        <gh-container>
+          <gh-stack direction="row" align="center" gap="16">
+            <gh-icon name="mark-github" size="24"></gh-icon>
+            <strong style="font-size:14px">gh-ui</strong>
+            <a href="#">组件</a>
+            <a href="#">文档</a>
+            <gh-btn variant="invisible" size="sm" style="margin-left:auto">登录</gh-btn>
+          </gh-stack>
+        </gh-container>
+      </gh-header>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:6px 0 0"><code>variant="auto"</code>：跟随主题，亮色白底、暗色深底</p>
+      <gh-header variant="auto">
+        <gh-container>
+          <gh-stack direction="row" align="center" gap="16">
+            <gh-icon name="mark-github" size="24"></gh-icon>
+            <strong style="font-size:14px">gh-ui</strong>
+            <a href="#">组件</a>
+            <a href="#">文档</a>
+            <gh-btn variant="invisible" size="sm" style="margin-left:auto">登录</gh-btn>
+          </gh-stack>
+        </gh-container>
+      </gh-header>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:6px 0 0">
+        子元素加 <code>slot="tabs"</code>（通常是 <code>&lt;gh-tabs&gt;</code>）就能把 tab 行挂进 appbar，
+        对齐 <code>gh-container</code> 的内容区、分隔线通栏，和 GitHub 仓库页一致
+      </p>
+      <gh-header variant="auto">
+        <gh-container>
+          <gh-stack direction="row" align="center" gap="8">
+            <gh-icon name="repo" size="16" style="color:var(--gh-fg-muted)"></gh-icon>
+            <a href="#">A03HCY</a>
+            <span style="opacity:.5">/</span>
+            <strong style="font-size:16px">Quill</strong>
+            <gh-label variant="outline" size="sm">Public</gh-label>
+            <gh-stack direction="row" align="center" gap="8" style="margin-left:auto">
+              <gh-btn size="sm"><gh-icon name="star"></gh-icon> Star <gh-label rounded>1.2k</gh-label></gh-btn>
+              <gh-btn size="sm"><gh-icon name="git-branch"></gh-icon> Fork 128</gh-btn>
+            </gh-stack>
+          </gh-stack>
+        </gh-container>
+        <gh-tabs slot="tabs">
+          <gh-tab selected><gh-icon name="code"></gh-icon> Code</gh-tab>
+          <gh-tab><gh-icon name="issue-opened"></gh-icon> Issues <gh-label rounded>0</gh-label></gh-tab>
+          <gh-tab><gh-icon name="git-pull-request"></gh-icon> Pull requests</gh-tab>
+          <gh-tab><gh-icon name="play"></gh-icon> Actions</gh-tab>
+          <gh-tab><gh-icon name="project"></gh-icon> Projects</gh-tab>
+        </gh-tabs>
+      </gh-header>
+    </gh-stack>
+  </section>
+
+  <h2>通知与确认 gh-toast / GHDialog.confirm</h2>
+  <section class="row">
+    <gh-btn onclick="GHUI.toast('已保存到草稿','ok')">成功 Toast</gh-btn>
+    <gh-btn onclick="GHUI.toast('网络连接失败','err')">错误 Toast</gh-btn>
+    <gh-btn onclick="GHUI.toast('普通提示')">普通 Toast</gh-btn>
+    <gh-btn variant="danger"
+      onclick="GHUI.confirm({title:'删除事项',message:'确定要删除该事项吗？此操作不可撤销。',okText:'删除',danger:true}).then(ok=>GHUI.toast(ok?'已删除':'已取消', ok?'':'ok'))">
+      Promise 确认框
+    </gh-btn>
+  </section>
+
+  <h2>表单 gh-field / gh-input / gh-select / gh-textarea</h2>
+  <section style="max-width:520px">
+    <gh-stack gap="14">
+      <gh-field label="任务标题" hint="不超过 50 字，回车提交">
+        <gh-input name="title" placeholder="输入任务标题…"></gh-input>
+      </gh-field>
+      <gh-field label="搜索">
+        <gh-input icon="search" placeholder="搜索事项…"></gh-input>
+      </gh-field>
+      <gh-field label="状态">
+        <gh-select name="state">
+          <option value="todo">待办</option>
+          <option value="in_progress" selected>进行中</option>
+          <option value="done">已完成</option>
+        </gh-select>
+      </gh-field>
+      <gh-field label="负责人" hint="选项可带头像（avatar）或图标（icon），超长文本自动截断">
+        <gh-select name="owner" value="u2">
+          <option value="u1" avatar="avatar.svg">羽田舟</option>
+          <option value="u2" avatar="羽">一个名字特别长的团队成员</option>
+          <option value="u3" icon="person">Aiden</option>
+        </gh-select>
+      </gh-field>
+      <gh-field label="归档状态（禁用）">
+        <gh-select name="archived" disabled>
+          <option>已归档</option>
+        </gh-select>
+      </gh-field>
+      <gh-field label="搜索（带清除按钮）">
+        <gh-input icon="search" clearable placeholder="输入关键词…" value="组件库"></gh-input>
+      </gh-field>
+      <gh-field label="密码（可切换可见）">
+        <gh-input type="password" reveal value="secret123"></gh-input>
+      </gh-field>
+      <gh-field label="昵称" hint="最多 20 个字">
+        <gh-input maxlength="20" counter placeholder="输入昵称…"></gh-input>
+      </gh-field>
+      <gh-field label="邮箱" error="邮箱格式不正确，请检查后重试">
+        <gh-input type="email" value="bad@"></gh-input>
+      </gh-field>
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:0">
+        <code>gh-select</code> 与 <code>gh-dropdown</code> 共用同一套菜单外观（<code>.gh-menu</code>），
+        但语义不同：前者是表单控件（有 value / change，内部保留原生 select 负责提交），后者是动作菜单。
+      </p>
+      <gh-field label="描述">
+        <gh-textarea rows="3" placeholder="支持 Markdown…"></gh-textarea>
+      </gh-field>
+    </gh-stack>
+  </section>
+
+  <h2>分段控件 / 滑块 / 分体按钮 / 标签输入</h2>
+  <section style="max-width:560px">
+    <gh-stack gap="16">
+      <gh-stack direction="row" gap="12" align="center" wrap>
+        <gh-segmented value="list" label="视图切换">
+          <gh-segment value="list" icon="list-unordered">列表</gh-segment>
+          <gh-segment value="board" icon="project">看板</gh-segment>
+          <gh-segment value="timeline" icon="history">时间线</gh-segment>
+        </gh-segmented>
+        <gh-segmented value="all" aria-label="筛选">
+          <gh-segment value="all">全部</gh-segment>
+          <gh-segment value="open">进行中</gh-segment>
+          <gh-segment value="closed" disabled>已关闭</gh-segment>
+        </gh-segmented>
+      </gh-stack>
+
+      <gh-segmented expand value="https" aria-label="克隆方式">
+        <gh-segment value="https">HTTPS</gh-segment>
+        <gh-segment value="ssh">SSH</gh-segment>
+        <gh-segment value="cli">GitHub CLI</gh-segment>
+      </gh-segmented>
+
+      <gh-field label="并发数" hint="拖动调整，右侧实时显示">
+        <gh-range name="concurrency" min="1" max="20" value="8" show-value></gh-range>
+      </gh-field>
+      <gh-range value="60" show-value disabled></gh-range>
+
+      <gh-stack direction="row" gap="12" wrap>
+        <gh-split-button id="split-demo" label="合并" variant="primary" align="right">
+          <button type="button">Squash and merge</button>
+          <button type="button">Rebase and merge</button>
+          <button type="button">Create a merge commit</button>
+        </gh-split-button>
+        <gh-split-button label="导出" size="sm">
+          <button type="button">导出 CSV</button>
+          <button type="button">导出 JSON</button>
+        </gh-split-button>
+      </gh-stack>
+
+      <gh-field label="标签" hint="输入筛选、回车加入；退格删除最后一个；× 移除">
+        <gh-tag-input name="labels" placeholder="添加标签…" value="bug,ui">
+          <option value="bug">Bug</option>
+          <option value="ui">UI</option>
+          <option value="docs">文档</option>
+          <option value="perf">性能</option>
+          <option value="a11y">无障碍</option>
+        </gh-tag-input>
+      </gh-field>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:0">
+        <code>gh-segmented</code> 派发 <code>gh:change</code>，选中底板由一层绝对定位的滑块承担、切换时滑过去（总高由 <code>--gh-segmented-h</code> 控制，默认 32px）；<code>gh-range</code> 透传原生 input/change；
+        <code>gh-split-button</code> 主按钮派发 <code>gh:action</code>、菜单项 <code>gh:select</code>；
+        <code>gh-tag-input</code> 每个值一个隐藏 input（同名），可直接 <code>FormData</code> 收集。
+      </p>
+    </gh-stack>
+  </section>
+
+  <h2>复选框 / 单选框</h2>
+  <section>
+    <gh-stack gap="12">
+      <gh-checkbox checked name="notify" value="email">接收邮件通知</gh-checkbox>
+      <gh-checkbox name="notify" value="sms">接收短信通知</gh-checkbox>
+      <gh-checkbox indeterminate>半选状态（indeterminate）</gh-checkbox>
+      <gh-checkbox disabled checked>禁用且选中</gh-checkbox>
+      <gh-stack direction="row" gap="20" wrap style="margin-top:4px">
+        <gh-radio name="plan" value="free">免费版</gh-radio>
+        <gh-radio name="plan" value="pro" checked>专业版</gh-radio>
+        <gh-radio name="plan" value="team">团队版</gh-radio>
+        <gh-radio name="plan" value="blocked" disabled>不可选</gh-radio>
+      </gh-stack>
+    </gh-stack>
+  </section>
+
+  <h2>徽章 / 空状态 / Markdown / 相对时间</h2>
+  <section class="row">
+    <gh-badge state="open" dot>Open</gh-badge>
+    <gh-badge state="closed" dot>Closed</gh-badge>
+    <gh-badge state="danger" dot>阻塞</gh-badge>
+    <gh-badge state="warn" dot>待评审</gh-badge>
+    <gh-badge state="accent" dot>进行中</gh-badge>
+    <gh-spinner></gh-spinner>
+    <gh-time datetime="2026-11-04T08:00:00"></gh-time>
+  </section>
+
+  <section class="row" style="margin-top:16px">
+    <gh-avatar size="40" src="avatar.svg"><gh-badge dot></gh-badge></gh-avatar>
+    <gh-avatar size="40">舟<gh-badge>8</gh-badge></gh-avatar>
+    <gh-avatar size="40" square src="avatar.svg">
+      <gh-badge color="#1f883d" position="bottom-right">3</gh-badge>
+    </gh-avatar>
+    <gh-avatar size="40">A<gh-badge hide-zero>0</gh-badge></gh-avatar>
+    <gh-icon name="bell" size="24"><gh-badge max="99">128</gh-badge></gh-icon>
+    <gh-btn>通知<gh-badge overlay max="99" color="#8250df">120</gh-badge></gh-btn>
+    <gh-badge color="#1f883d">new</gh-badge>
+  </section>
+  <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:8px 0 0">
+    角落徽标：放进 <code>gh-avatar</code> / <code>gh-icon</code> 自动吸附，或给 <code>gh-badge</code> 加
+    <code>overlay</code> 挂到任意元素。支持 <code>dot</code>、数字/文字、<code>max="99"</code>（99+）、
+    <code>color</code>、<code>position</code> 四角（上面方头像右下角的绿 3）、
+    <code>hide-zero</code>（为 0 时不显示）。
+  </p>
+  <section class="row">
+    <gh-btn size="sm" onclick="document.getElementById('empty-demo').hidden=!document.getElementById('empty-demo').hidden">
+      切换空状态
+    </gh-btn>
+  </section>
+  <section style="max-width:520px">
+    <div id="empty-demo"><gh-empty icon="inbox" title="还没有事项">创建第一个事项开始规划工作。</gh-empty></div>
+    <gh-box title="gh-md 渲染示例" style="margin-top:12px">
+      <gh-md>任务说明支持 **Markdown**：`行内代码`、[链接](https://github.com)、列表：
+
+- 第一项
+- 第二项
+
+### 小标题
+
+```
+const x = 42;
+```</gh-md>
+    </gh-box>
+  </section>
+
+  <h2>进度 gh-progress / 环形 / 步骤条</h2>
+  <section>
+    <gh-stack gap="18" style="max-width:560px">
+      <gh-progress value="72" tone="success" label="上传进度" show-value></gh-progress>
+      <gh-progress label="构建中，预计 2 分钟" indeterminate></gh-progress>
+      <gh-progress value="58" tone="warning" label="正在迁移 1,284 条记录" show-value striped></gh-progress>
+      <gh-progress value="8" max="10" tone="done" label="已完成 8 / 10 项" show-value></gh-progress>
+      <gh-progress value="92" size="lg" tone="danger" show-value></gh-progress>
+      <gh-progress value="40" thin show-value></gh-progress>
+    </gh-stack>
+
+    <gh-stack direction="row" gap="24" align="center" wrap style="margin-top:22px">
+      <gh-progress-circle value="72" size="96" tone="success" label="完成度"></gh-progress-circle>
+      <gh-progress-circle value="45" size="72" tone="warning"></gh-progress-circle>
+      <gh-progress-circle value="88" size="72" tone="danger"></gh-progress-circle>
+      <gh-progress-circle size="64" indeterminate label="同步中"></gh-progress-circle>
+      <gh-progress-circle value="64" size="76" tone="done" stroke="6">
+        <gh-icon name="check" size="26"></gh-icon>
+      </gh-progress-circle>
+    </gh-stack>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      <code>gh-progress</code>：<code>value</code>/<code>max</code>、<code>tone</code>、<code>size="lg"</code>/<code>thin</code>、
+      <code>label</code> + <code>show-value</code>、<code>indeterminate</code>、<code>striped</code>、<code>color</code>。<br>
+      <code>gh-progress-circle</code>：<code>size</code>/<code>stroke</code>/<code>tone</code>，圆心可放任意内容。
+    </p>
+  </section>
+
+  <section style="margin-top:20px">
+    <gh-steps current="1" clickable>
+      <gh-step meta="10 月 12 日">创建分支</gh-step>
+      <gh-step meta="进行中">提交变更</gh-step>
+      <gh-step>代码评审</gh-step>
+      <gh-step>合并发布</gh-step>
+    </gh-steps>
+  </section>
+
+  <section style="margin-top:22px;max-width:340px">
+    <gh-steps current="2" vertical>
+      <gh-step meta="已完成">安装依赖</gh-step>
+      <gh-step meta="3 分钟前">运行测试</gh-step>
+      <gh-step title="构建产物" meta="进行中">正在打包 128 个模块…</gh-step>
+      <gh-step state="error" meta="失败：权限不足">部署</gh-step>
+    </gh-steps>
+  </section>
+
+  <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:12px 0 0">
+    <code>gh-steps</code> 用 <code>current</code> 控制进度（从 0 起），<code>state="error"</code> 强制标记失败；
+    直接写文字就是标题（<code>title</code> 属性可省略），带 <code>title</code> 时文字转为副描述；
+    <code>clickable</code> 可点击切换并派发 <code>gh:step-change</code>；<code>vertical</code> 纵向，窄屏自动转纵向。
+  </p>
+
+  <h2>表格 gh-table / 列表 gh-list</h2>
+  <section>
+    <gh-table empty="暂无数据" dense>
+      <table>
+        <thead>
+          <tr><th>成员</th><th>角色</th><th>状态</th><th style="text-align:right">提交数</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>羽田舟</td><td>Owner</td><td><gh-badge state="open" dot>活跃</gh-badge></td><td style="text-align:right">128</td></tr>
+          <tr><td>Aiden</td><td>Maintainer</td><td><gh-badge state="open" dot>活跃</gh-badge></td><td style="text-align:right">76</td></tr>
+          <tr><td>林一</td><td>Member</td><td><gh-badge state="warn" dot>待确认</gh-badge></td><td style="text-align:right">12</td></tr>
+          <tr><td>张三</td><td>Member</td><td><gh-badge state="closed" dot>已离开</gh-badge></td><td style="text-align:right">0</td></tr>
+        </tbody>
+      </table>
+    </gh-table>
+
+    <div style="margin-top:12px">
+      <gh-list>
+        <gh-list-item icon="issue-opened" title="登录页在 Safari 下白屏" meta="#42 · 2 小时前 · 羽田舟" selected>
+          <gh-badge state="open" dot>Open</gh-badge>
+        </gh-list-item>
+        <gh-list-item icon="git-pull-request" title="feat: 表格与列表组件" meta="#41 · 昨天 · Aiden">
+          <gh-avatar size="20">A</gh-avatar>
+        </gh-list-item>
+        <gh-list-item icon="check" title="修复构建脚本" meta="#40 · 3 天前 · 林一">
+          <gh-badge state="closed" dot>Closed</gh-badge>
+        </gh-list-item>
+      </gh-list>
+    </div>
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:8px 0 0">
+      <gh-kbd>Ctrl</gh-kbd> + <gh-kbd>K</gh-kbd> 打开命令面板 ·
+      多选成员头像：
+      <gh-avatar-stack max="3" style="vertical-align:middle">
+        <gh-avatar size="26">羽</gh-avatar>
+        <gh-avatar size="26">林</gh-avatar>
+        <gh-avatar size="26" src="avatar.svg"></gh-avatar>
+        <gh-avatar size="26">张</gh-avatar>
+        <gh-avatar size="26">李</gh-avatar>
+      </gh-avatar-stack>
+    </p>
+  </section>
+
+  <h2>开关 gh-switch / 组合框 gh-combobox</h2>
+  <section style="max-width:520px">
+    <gh-stack gap="14">
+      <gh-switch checked name="notify" value="1">接收邮件通知</gh-switch>
+      <gh-switch name="weekly" value="1">每周摘要</gh-switch>
+      <gh-switch disabled checked>禁用且开启</gh-switch>
+      <gh-switch status checked name="mcp">在轨道左侧显示状态文案（On / Off）</gh-switch>
+      <gh-switch status name="instructions" status-on="开" status-off="关">文案也可以自定义</gh-switch>
+      <gh-switch shape="square" checked name="square">方形滑块 shape="square"</gh-switch>
+      <gh-switch inline checked name="draft">文案内嵌进轨道 inline</gh-switch>
+      <gh-switch icon name="mark">滑块里显示 ✓ / × icon</gh-switch>
+      <gh-switch inline icon checked name="combo">内嵌文案 + 图标可叠加</gh-switch>
+      <gh-switch shape="square" inline icon checked name="combo2" status-on="开" status-off="关">方形 + 内嵌中文文案 + 图标</gh-switch>
+      <gh-switch size="sm" checked name="s-sm">小 size="sm"</gh-switch>
+      <gh-switch size="lg" checked name="s-lg">大 size="lg"</gh-switch>
+      <gh-switch size="sm" shape="square" checked name="sm-square">小 + 方形</gh-switch>
+      <gh-switch size="lg" shape="square" checked name="lg-square">大 + 方形</gh-switch>
+      <gh-switch size="sm" inline checked name="sm-inline">小 + 内嵌</gh-switch>
+      <gh-switch size="lg" inline icon checked name="lg-inline" status-on="开" status-off="关">大 + 内嵌 + 图标</gh-switch>
+      <gh-switch size="lg" status checked name="lg-status">大 + 状态文案</gh-switch>
+      <p data-no-code>形态变体可以自由叠加：<code>shape="square"</code> 换成圆角方块滑块，对侧留一个状态标记（关是空心圈、开是白色竖条）、<code>inline</code> 把 On / Off 文案内嵌进轨道（<code>status-on</code> / <code>status-off</code> 改文案）、<code>icon</code> 在滑块里画 ✓（开）/ ×（关）；<code>size="sm" | "lg"</code> 换整套尺寸（默认 md），和形态自由组合。几何走宿主上的 <code>--gh-switch-w</code> / <code>--gh-switch-h</code> / <code>--gh-switch-knob</code> / <code>--gh-switch-gap</code> / <code>--gh-switch-marker</code> 变量。</p>
+      <gh-field label="负责人（可搜索）" hint="输入关键字过滤，↑↓ 选择，回车确认；选项同样支持头像">
+        <gh-combobox name="owner" placeholder="搜索成员…">
+          <option value="u1" avatar="avatar.svg">羽田舟</option>
+          <option value="u2" avatar="羽">Aiden</option>
+          <option value="u3" icon="person">林一</option>
+          <option value="u4">张三</option>
+          <option value="u5">李四</option>
+        </gh-combobox>
+      </gh-field>
+    </gh-stack>
+  </section>
+
+  <h2>浮层 tooltip / popover / drawer</h2>
+  <section class="row">
+    <gh-tooltip text="刷新数据" placement="top">
+      <gh-btn size="icon" aria-label="刷新"><gh-icon name="sync"></gh-icon></gh-btn>
+    </gh-tooltip>
+    <gh-tooltip text="删除（不可恢复）" placement="bottom">
+      <gh-btn variant="danger" size="icon" aria-label="删除"><gh-icon name="trash"></gh-icon></gh-btn>
+    </gh-tooltip>
+    <gh-popover placement="bottom-start">
+      <gh-btn slot="trigger">筛选 <gh-icon name="triangle-down"></gh-icon></gh-btn>
+      <gh-stack gap="12">
+        <gh-field label="状态">
+          <gh-select>
+            <option>全部</option><option>进行中</option><option>已完成</option>
+          </gh-select>
+        </gh-field>
+        <gh-checkbox checked>只看我的</gh-checkbox>
+        <gh-btn variant="primary" size="sm">应用筛选</gh-btn>
+      </gh-stack>
+    </gh-popover>
+    <gh-btn data-gh-open="demo-drawer">打开抽屉</gh-btn>
+  </section>
+
+  <gh-drawer id="demo-drawer" title="筛选条件" side="right" width="320px">
+    <gh-stack gap="14">
+      <gh-field label="关键字">
+        <gh-input icon="search" clearable placeholder="搜索事项…"></gh-input>
+      </gh-field>
+      <gh-field label="状态">
+        <gh-select>
+          <option>全部</option><option>进行中</option><option>已完成</option>
+        </gh-select>
+      </gh-field>
+      <gh-switch checked>只看我负责的</gh-switch>
+    </gh-stack>
+    <div slot="footer">
+      <gh-btn data-gh-close>取消</gh-btn>
+      <gh-btn variant="primary" data-gh-close>应用</gh-btn>
+    </div>
+  </gh-drawer>
+
+  <h2>弹层 gh-popover（标题 / 搜索 / 勾选列表 / 底部操作）</h2>
+  <p data-no-code>弹层可以像 GitHub 的 Lists 那样带上标题与说明、搜索框、可勾选的行、以及底部的通栏操作：<code>title</code> / <code>description</code>、<code>search</code> + <code>search-placeholder</code>、<code>&lt;gh-popover-item&gt;</code> 行（<code>title</code> / <code>hint</code> / <code>checked</code>，也可以把标题直接写在标签里），<code>slot="footer"</code> 的按钮自动通栏贴在分隔线下面，带 <code>data-popover-close</code> 的按钮点完会收起弹层。</p>
+  <section class="row">
+    <gh-popover id="lists-pop" placement="bottom-start" width="340px"
+                title="Lists" description="Add this repository to one or more lists"
+                search search-placeholder="Filter lists">
+      <gh-btn slot="trigger">Add to list <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+      <gh-popover-item title="开发重点" hint="优先开发项目" checked value="dev"></gh-popover-item>
+      <gh-popover-item checked value="stack">🚀 My stack</gh-popover-item>
+      <gh-popover-item title="设计走查" hint="每周同步一次" value="design"></gh-popover-item>
+      <gh-popover-item title="数据看板" hint="周报与指标追踪" value="data"></gh-popover-item>
+      <gh-btn slot="footer" data-popover-close>Create list</gh-btn>
+    </gh-popover>
+    <gh-popover placement="bottom-end" width="280px" title="Share" description="Anyone with the link can view">
+      <gh-btn slot="trigger" variant="primary">Share <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+      <gh-popover-item checked>Copy link</gh-popover-item>
+      <gh-popover-item>Embed in page</gh-popover-item>
+      <gh-btn slot="footer" variant="primary" data-popover-close>Done</gh-btn>
+    </gh-popover>
+  </section>
+
+  <h2 id="layer-section">自定义浮层 gh-layer</h2>
+  <section>
+    <gh-stack direction="row" gap="10" align="center" wrap>
+      <gh-btn id="layer-pick">选择仓库 <gh-icon name="triangle-down" size="12"></gh-icon></gh-btn>
+      <!-- 声明式：点触发器开合，内容任意写 -->
+      <gh-layer anchor="#layer-pick" placement="bottom-start" width="260" menu close-on-item>
+        <div class="gh-menu">
+          <gh-menu-item icon="repo" shortcut="⌘1">gh-ui</gh-menu-item>
+          <gh-menu-item icon="repo" shortcut="⌘2">teamflow</gh-menu-item>
+          <gh-menu-item icon="plus">新建仓库…</gh-menu-item>
+        </div>
+      </gh-layer>
+      <div id="layer-area" style="flex:1;min-width:220px;padding:10px 12px;border:1px dashed var(--gh-border);border-radius:8px;font-size:13px;color:var(--gh-fg-muted)">
+        在这个区域里点右键 → 按坐标弹出（GHUI.layer）
+      </div>
+    </gh-stack>
+
+    <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:14px 0 0">
+      <code>gh-layer</code> 把内容放进 body 下的 fixed 浮层：可用 <code>anchor</code> 选择器 / <code>slot="trigger"</code>
+      绑定触发器，<code>placement</code> 控制方向，<code>menu</code> 收紧内边距做菜单，<code>close-on-item</code> 点菜单项自动收起；
+      也可以用 <code>GHUI.layer({ anchor: event | {x,y} })</code> 在任意位置弹出，返回值可 <code>close()</code>、<code>setContent()</code>。
+    </p>
+  </section>
+
+  <h2>代码块 / 骨架屏 / 分页</h2>
+  <section style="max-width:640px">
+    <gh-stack gap="16">
+      <gh-code-block title="install.sh" lang="bash">npm i gh-ui
+npm run dev</gh-code-block>
+
+      <gh-code-block title="app.js" lang="js" line-numbers>// 引入后直接写自定义标签
+import 'gh-ui';
+
+const btn = document.createElement('gh-btn');
+btn.textContent = 'Save';
+btn.setAttribute('variant', 'primary');</gh-code-block>
+
+      <gh-stack direction="row" gap="10" align="center">
+        <gh-copy-button text="npm i gh-ui"></gh-copy-button>
+        <gh-copy-button>gh-ui.js</gh-copy-button>
+        <gh-copy-button text="https://github.com/">复制链接</gh-copy-button>
+      </gh-stack>
+
+      <gh-box title="加载中">
+        <gh-stack direction="row" gap="14" align="center">
+          <gh-skeleton circle size="40"></gh-skeleton>
+          <div style="flex:1;min-width:0">
+            <gh-skeleton lines="2"></gh-skeleton>
+          </div>
+          <gh-skeleton variant="rect" width="120px" height="40px"></gh-skeleton>
+        </gh-stack>
+      </gh-box>
+
+      <gh-stack direction="row" gap="14" align="center" wrap>
+        <gh-pagination id="pager" total="12" page="3"></gh-pagination>
+        <gh-pagination total="5" page="1" size="sm"></gh-pagination>
+      </gh-stack>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:0">
+        <code>gh-code-block</code>：<code>title</code>/<code>lang</code>/<code>line-numbers</code>/<code>no-copy</code>，
+        内置轻量高亮（关键字/字符串/注释/数字），不依赖任何第三方库；
+        <code>gh-copy-button</code> 复制成功后图标变对勾；
+        <code>gh-skeleton</code> 支持 <code>lines</code>/<code>circle</code>/<code>variant="rect"</code>；
+        <code>gh-pagination</code> 自动折叠中间页码，派发 <code>gh:change</code>。
+      </p>
+    </gh-stack>
+  </section>
+
+  <h2 id="file-picker">文件选择 gh-file-picker</h2>
+  <section style="max-width:560px">
+    <gh-stack gap="18">
+      <gh-file-picker id="uploader" multiple accept="image/*,.pdf,.zip,.md"
+        max-size="2MB" max-files="5" name="attachments"></gh-file-picker>
+
+      <gh-file-picker variant="button" accept="image/*" hint="单张图片，不超过 2 MB"></gh-file-picker>
+
+      <gh-file-picker id="picker-disabled" disabled accept=".pdf" hint="禁用状态"></gh-file-picker>
+
+      <p data-no-code style="font-size:12px;color:var(--gh-fg-muted);margin:0">
+        点按、拖拽、<kbd>Ctrl</kbd>+<kbd>V</kbd> 三种方式都能加入文件；<code>accept</code> / <code>max-size</code> /
+        <code>max-files</code> 在客户端先校验，超限的文件不会进入列表，错误提示就地显示；
+        图片自动生成缩略图，列表底部汇总数量与总大小。
+      </p>
+      <gh-code-block title="uploader.js" lang="js">const picker = document.querySelector('gh-file-picker');
+
+// 配一个上传函数即可：进度、失败重试、取消都由组件接管
+picker.uploader = async (file, { onProgress, signal }) => {
+  const body = new FormData();
+  body.append('file', file);
+  const res = await fetch('/api/upload', { method: 'POST', body, signal });
+  if (!res.ok) throw new Error('上传失败：' + res.status);
+  return res.json();
+};
+
+picker.addEventListener('gh:change', (e) => {
+  console.log(e.detail.files);       // File[]
+  // 表单里也可以直接 new FormData(form) 取到 name="attachments" 的文件
+});</gh-code-block>
+    </gh-stack>
+  </section>
+
+  <h2>图标 gh-icon</h2>
+  <section id="icon-wall" style="font-size:13px;color:var(--gh-fg-muted)">
+    <div class="row" id="icon-row"></div>
+    <p>共内置 111 个 Octicons 图标（下方为常用示例），写法：<code>&lt;gh-icon name="star" size="16"&gt;&lt;/gh-icon&gt;</code>，颜色自动跟随文字。</p>
+  </section>
+
+    </main>
+  </div>
+</gh-container>
+
+<button class="demo-top" id="demo-top" type="button" aria-label="回到顶部" title="回到顶部">
+  <gh-icon name="chevron-up" size="16"></gh-icon>
+</button>
+
+
+<script>
+  // 给每个示例区块挂一份「实现代码」：
+  // 这段在 defer 的组件脚本之前执行，抓到的是组件升级前的原始 HTML，
+  // 所以不需要在文档里再手写一遍代码，示例改了代码自动跟着变。
+  (function collectSources() {
+    // 正文容器（h2 与 section 都是它的直接子元素）；兼容旧版直接放在 gh-container 里的结构
+    const root = document.querySelector('.demo-main') ||
+      [...document.querySelectorAll('gh-container')].find((c) => c.querySelector('h2'));
+    if (!root) return;
+    const blocks = [];
+    let current = null;
+    [...root.children].forEach((node) => {
+      if (node.tagName === 'H2') {
+        current = { nodes: [], mount: null };
+        blocks.push(current);
+        return;
+      }
+      if (!current) return;
+      current.nodes.push(node);
+      if (node.tagName === 'SECTION') current.mount = node;
+    });
+
+    const dedent = (html) => {
+      const lines = html.replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+      const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+      const min = indents.length ? Math.min(...indents) : 0;
+      // 拆掉外壳后会多出空行（源码里元素之间的缩进），合并掉
+      // 克隆后的布尔属性会被序列化成 disabled=""，展示时还原成熟悉的写法
+      const BOOL = new Set(['multiple', 'searchable', 'divided', 'selected', 'disabled',
+        'dense', 'line-numbers', 'no-copy', 'clearable', 'reveal', 'counter', 'clickable',
+        'vertical', 'wrap', 'plain', 'compact', 'flush', 'square', 'show-value', 'striped', 'expand',
+        'no-action', 'menu', 'close-on-item', 'checkbox', 'checked', 'collapse', 'status', 'search',
+        'active', 'expandable', 'open', 'badge', 'bordered', 'dense', 'collapsible', 'collapsed', 'prefix', 'card', 'bare', 'header-box', 'active', 'no-add', 'inline', 'icon']);
+      return lines.map((l) => l.slice(min)).join('\n')
+        .replace(/\n(?:[ \t]*\n)+/g, '\n')
+        .replace(/\s([\w-]+)=""/g, (m, name) => (BOOL.has(name) ? ' ' + name : m));
+    };
+
+    const sources = blocks.map((block) => {
+      const host = document.createElement('div');
+      block.nodes.forEach((n) => host.append(n.cloneNode(true)));
+      // 去掉演示专用的东西：说明段落、已有代码块、脚本
+      host.querySelectorAll('gh-code-block, .demo-code, script, [data-no-code]')
+        .forEach((n) => n.remove());
+      // section 只是演示用的版面外壳，拆掉只留组件本身
+      host.querySelectorAll(':scope > section').forEach((sec) => sec.replaceWith(...sec.childNodes));
+      return { code: dedent(host.innerHTML), mount: block.mount || block.nodes.filter((n) => n.nodeType === 1).pop() };
+    });
+
+    addEventListener('DOMContentLoaded', () => {
+      sources.forEach(({ code, mount }) => {
+        if (!code || !mount || !/<gh-[a-z]/.test(code)) return;
+        const wrap = document.createElement('details');
+        wrap.className = 'demo-code';
+        const summary = document.createElement('summary');
+        summary.textContent = '实现代码';
+        const block = document.createElement('gh-code-block');
+        block.setAttribute('title', 'HTML');
+        block.textContent = code;
+        wrap.append(summary, block);
+        mount.append(wrap);
+      });
+    });
+  })();
+
+  // AI 输入框：只剩「发送」需要写代码，选择器的按钮文案由组件自己维护
+  const composer = document.getElementById('demo-composer');
+  composer.addEventListener('gh:send', (e) => {
+    GHUI.toast('已发送：' + e.detail.value, 'ok');
+    composer.clear();
+  });
+
+  // Markdown 编辑器：提交后给个提示并清空
+  const editor = document.getElementById('demo-editor');
+  editor.addEventListener('gh:submit', (e) => {
+    GHUI.toast('已提交评论（' + e.detail.value.length + ' 字符）', 'ok');
+    editor.clear();
+  });
+
+  // 导航抽屉：点条目后关闭并提示
+  const navDrawer = document.getElementById('nav-drawer');
+  document.getElementById('open-nav-drawer').addEventListener('click', () => navDrawer.show());
+  navDrawer.addEventListener('gh:nav', (e) => {
+    navDrawer.close();
+    GHUI.toast('前往：' + e.detail.key);
+  });
+
+  // 侧栏账号：两个交互分别派发 gh:switch / gh:account
+  const account = document.getElementById('demo-account');
+  account.addEventListener('gh:switch', () => GHUI.toast('打开账号切换器'));
+  account.addEventListener('gh:account', () => GHUI.toast('打开个人资料'));
+  // 分页：切换页码
+  document.getElementById('pager').addEventListener('gh:change', (e) => {
+    GHUI.toast('切换到第 ' + e.detail.page + ' 页');
+  });
+  // 分体按钮：主按钮与菜单项
+  const split = document.getElementById('split-demo');
+  split.addEventListener('gh:action', () => GHUI.toast('执行默认合并', 'ok'));
+  split.addEventListener('gh:select', (e) => GHUI.toast('选择了：' + e.detail.item.textContent.trim()));
+  // 自定义浮层：区域内右键，按坐标弹出（坐标来自事件对象）
+  document.getElementById('layer-area').addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    GHUI.layer({
+      anchor: e,
+      menu: true,
+      closeOnItem: true,
+      content: `<div class="gh-menu">
+        <gh-menu-item icon="copy">复制</gh-menu-item>
+        <gh-menu-item icon="pencil">重命名</gh-menu-item>
+        <gh-menu-item icon="trash" danger>删除</gh-menu-item>
+      </div>`,
+    });
+  });
+  // 表单弹窗：gh:confirm 里能拿到所有 name 字段
+  document.getElementById('invite-dialog').addEventListener('gh:confirm', (e) => {
+    const v = e.detail.values;
+    GHUI.toast('已邀请 ' + v.email + '（' + v.role + '）', 'ok');
+  });
+  // gh:tab-change 事件演示
+  document.getElementById('demo-tabs').addEventListener('gh:tab-change', (e) => {
+    document.getElementById('tab-log').textContent = '最近切换到面板：' + e.detail.panel;
+  });
+  // 文件选择：用定时器模拟上传进度（真实项目里把 uploader 换成 fetch 即可）
+  const uploader = document.getElementById('uploader');
+  uploader.uploader = (file, { onProgress, signal }) => new Promise((resolve, reject) => {
+    let pct = 0;
+    const timer = setInterval(() => {
+      if (signal.aborted) { clearInterval(timer); reject(new Error('已取消')); return; }
+      pct = Math.min(100, pct + 9 + Math.random() * 15);
+      onProgress(pct);
+      if (pct >= 100) { clearInterval(timer); resolve(); }
+    }, 240);
+  });
+  uploader.addEventListener('gh:change', (e) => console.log('已选文件：', e.detail.files));
+  // 图标墙：枚举全部图标名
+  addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      // ICONS 表未直接暴露，从库内导出的组件反向演示：直接写一部分常用图标
+      const names = ['mark-github','repo','star','git-branch','git-commit','git-pull-request',
+        'issue-opened','issue-closed','check','x','alert','info','search','bell','mail','tag',
+        'person','people','organization','link','copy','pencil','trash','plus','download',
+        'upload','sync','play','code','eye','heart','light-bulb','rocket','shield','gear',
+        'home','file','file-directory','book','calendar','clock','location','comment','lock',
+        'archive','package','terminal','zap','flame','gift','history','smiley','globe','pin','arrow-switch',
+        'note','sun','moon','project','workflow','dashboard','quote','inbox','sign-in','sign-out'];
+      document.getElementById('icon-row').innerHTML = names
+        .map((n) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid var(--gh-border);border-radius:6px"><gh-icon name="${n}"></gh-icon>${n}</span>`)
+        .join('');
+    }, 0);
+  });
+
+  // ---------- 演示页导航（页面辅助，不属于组件库）：目录 / 锚点 / 筛选 / 回到顶部 ----------
+  addEventListener('DOMContentLoaded', () => {
+    const main = document.querySelector('.demo-main');
+    const list = document.getElementById('toc-list');
+    const filter = document.getElementById('toc-filter');
+    if (!main || !list) return;
+
+    const version = document.getElementById('demo-version');
+    if (version && window.GHUI) version.textContent = 'v' + GHUI.version;
+
+    const heads = [...main.querySelectorAll(':scope > h2')];
+    const statSections = document.getElementById('stat-sections');
+    if (statSections) statSections.textContent = String(heads.length);
+
+    const items = heads.map((h, i) => {
+      const id = 'sec-' + (i + 1);
+      h.id = id;
+      const label = h.textContent.trim();
+      const anchor = document.createElement('a');
+      anchor.className = 'demo-anchor';
+      anchor.href = '#' + id;
+      anchor.textContent = '#';
+      anchor.setAttribute('aria-label', '链接到「' + label + '」');
+      h.append(anchor);
+      const a = document.createElement('a');
+      a.className = 'demo-toc__item';
+      a.href = '#' + id;
+      a.textContent = label;
+      a.dataset.label = label.toLowerCase();
+      list.append(a);
+      return { h, a };
+    });
+
+    // 滚动时高亮当前读到的小节：取视口上方 18% 处最后一条越过的标题
+    let active = null;
+    const syncActive = () => {
+      const line = innerHeight * 0.18;
+      let cur = items[0] || null;
+      for (const it of items) if (it.h.getBoundingClientRect().top <= line) cur = it;
+      if (cur === active) return;
+      active = cur;
+      items.forEach((it) => it.a.classList.toggle('is-current', it === cur));
+      if (cur) cur.a.scrollIntoView({ block: 'nearest' });
+    };
+
+    // 目录筛选
+    const applyFilter = () => {
+      const q = (filter.value || '').trim().toLowerCase();
+      items.forEach((it) => { it.a.hidden = !!q && !it.a.dataset.label.includes(q); });
+    };
+    filter?.addEventListener('gh:input', applyFilter);
+    filter?.addEventListener('input', applyFilter);
+
+    // 「/」聚焦目录搜索，「Esc」清空并退出（输入框/编辑器里不劫持）
+    addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.isContentEditable);
+      if (e.key === '/' && !typing && filter) {
+        e.preventDefault();
+        filter.querySelector('input')?.focus();
+      } else if (e.key === 'Escape' && filter && filter.contains(document.activeElement)) {
+        filter.value = '';
+        applyFilter();
+        filter.blur();
+      }
+    });
+
+    // 展开 / 收起全部「实现代码」
+    const codes = () => [...document.querySelectorAll('.demo-code')];
+    document.getElementById('code-expand')?.addEventListener('click', () => codes().forEach((d) => { d.open = true; }));
+    document.getElementById('code-collapse')?.addEventListener('click', () => codes().forEach((d) => { d.open = false; }));
+
+    // 回到顶部
+    const top = document.getElementById('demo-top');
+    top?.addEventListener('click', () => {
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    });
+
+    const onScroll = () => {
+      syncActive();
+      if (top) top.classList.toggle('is-visible', scrollY > 600);
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    // 组件升级 / 代码块插入后高度会变，稍后再量一次
+    setTimeout(onScroll, 300);
+    onScroll();
+    syncThemeButton();
+  });
+</script>
+</body>
+</html>

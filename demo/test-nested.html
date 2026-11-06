@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>弹层内混搭边界</title>
+<style>
+  body { margin: 0; padding: 24px; font-family: -apple-system, "PingFang SC", sans-serif; background: var(--gh-canvas); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  #out { font-size: 12px; white-space: pre-wrap; background: var(--gh-canvas-subtle); padding: 10px; border-radius: 8px; }
+</style>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body>
+
+<div class="row">
+  <!-- 1. 弹层里再放 select-menu（嵌套浮层） -->
+  <gh-popover id="pop-a" placement="bottom-start">
+    <gh-btn slot="trigger" id="a-trigger">弹层 A（内嵌菜单）</gh-btn>
+    <gh-stack gap="12" style="width:260px">
+      <div style="font-size:13px;color:var(--gh-fg-muted)">下面是一个嵌套的 select-menu</div>
+      <gh-select-menu id="a-inner" label="选分支">
+        <option>main</option><option>develop</option><option>feature/x</option>
+      </gh-select-menu>
+      <gh-switch id="a-switch" checked>自动刷新</gh-switch>
+    </gh-stack>
+  </gh-popover>
+
+  <!-- 2. 弹层里塞表单控件全家桶 -->
+  <gh-popover id="pop-b" placement="bottom-start">
+    <gh-btn slot="trigger" id="b-trigger">弹层 B（表单全家桶）</gh-btn>
+    <gh-stack gap="12" style="width:280px">
+      <gh-field label="名称"><gh-input id="b-input" placeholder="输入…"></gh-input></gh-field>
+      <gh-field label="类型">
+        <gh-select id="b-select"><option>公开</option><option>私有</option></gh-select>
+      </gh-field>
+      <gh-field label="负责人">
+        <gh-combobox id="b-combo" placeholder="搜索…"><option>羽田舟</option><option>Aiden</option></gh-combobox>
+      </gh-field>
+      <gh-field label="优先级">
+        <gh-segmented id="b-seg">
+          <gh-segment value="low" selected>低</gh-segment>
+          <gh-segment value="mid">中</gh-segment>
+          <gh-segment value="high">高</gh-segment>
+        </gh-segmented>
+      </gh-field>
+      <gh-field label="进度"><gh-range id="b-range" min="0" max="100" value="40" show-value></gh-range></gh-field>
+      <gh-checkbox id="b-check" checked>邮件通知</gh-checkbox>
+      <gh-radio id="b-radio" name="r" checked>选项一</gh-radio>
+      <gh-radio name="r">选项二</gh-radio>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <gh-btn id="b-cancel" size="sm">取消</gh-btn>
+        <gh-btn id="b-ok" variant="primary" size="sm">确定</gh-btn>
+      </div>
+    </gh-stack>
+  </gh-popover>
+
+  <!-- 3. 弹层内容超高，内部滚动 -->
+  <gh-popover id="pop-c" placement="bottom-start">
+    <gh-btn slot="trigger" id="c-trigger">弹层 C（超高滚动）</gh-btn>
+    <div id="c-body" style="width:240px;max-height:200px;overflow-y:auto">
+      <gh-stack gap="8">
+        <gh-checkbox checked>第 1 项</gh-checkbox>
+        <gh-checkbox>第 2 项</gh-checkbox>
+        <gh-checkbox>第 3 项</gh-checkbox>
+        <gh-checkbox>第 4 项</gh-checkbox>
+        <gh-checkbox>第 5 项</gh-checkbox>
+        <gh-checkbox>第 6 项</gh-checkbox>
+        <gh-checkbox>第 7 项</gh-checkbox>
+        <gh-checkbox>第 8 项</gh-checkbox>
+        <gh-checkbox>第 9 项</gh-checkbox>
+        <gh-checkbox>第 10 项</gh-checkbox>
+      </gh-stack>
+    </div>
+  </gh-popover>
+
+  <!-- 4. 弹层里放下拉（dropdown） -->
+  <gh-popover id="pop-d" placement="bottom-start">
+    <gh-btn slot="trigger" id="d-trigger">弹层 D（内嵌 dropdown）</gh-btn>
+    <gh-stack gap="10" style="width:220px">
+      <gh-dropdown>
+        <gh-btn id="d-drop-trigger">操作 <gh-icon name="triangle-down"></gh-icon></gh-btn>
+        <gh-menu-item icon="copy">复制</gh-menu-item>
+        <gh-menu-item icon="trash" danger>删除</gh-menu-item>
+      </gh-dropdown>
+      <gh-select id="d-select"><option>全部</option><option>进行中</option></gh-select>
+    </gh-stack>
+  </gh-popover>
+</div>
+
+<pre id="out">running…</pre>
+
+<script>
+const results = [];
+const ok = (n, c, x = '') => results.push((c ? 'PASS ' : 'FAIL ') + n + (x ? ' → ' + x : ''));
+const wait = (ms = 70) => new Promise((r) => setTimeout(r, ms));
+const $ = (s) => document.querySelector(s);
+const openPopovers = () => document.querySelectorAll('.gh-popover.is-open').length;
+
+addEventListener('error', (e) => {
+  document.getElementById('out').textContent = results.join('\n') + '\nERROR ' + e.message + ' @' + e.lineno;
+});
+addEventListener('unhandledrejection', (e) => {
+  document.getElementById('out').textContent = results.join('\n') + '\nREJECT ' + (e.reason && e.reason.message);
+});
+
+addEventListener('DOMContentLoaded', async () => {
+  const st = document.createElement('style');
+  st.textContent = '*{animation:none!important;transition:none!important}';
+  document.head.append(st);
+  await wait(120);
+
+  /* ---------- 1. 弹层里嵌 select-menu：父弹层不能被关 ---------- */
+  $('#a-trigger').click();
+  await wait();
+  ok('弹层 A 打开', $('#pop-a').content.classList.contains('is-open'));
+  $('#a-inner').open();
+  await wait();
+  ok('内嵌 select-menu 打开（两个浮层同时）', openPopovers() === 2, `open=${openPopovers()}`);
+  ok('父弹层 A 没有被关掉', $('#pop-a').content.classList.contains('is-open'));
+  // 开关可切换
+  $('#a-switch').querySelector('input').click();
+  await wait();
+  ok('弹层内 switch 可切换', !$('#a-switch').checked, String($('#a-switch').checked));
+  // 关内层菜单，父层还在
+  $('#a-inner').close();
+  await wait();
+  ok('关内嵌菜单后父层还在', $('#pop-a').content.classList.contains('is-open'));
+  // 点外部关掉父层
+  document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  await wait();
+  ok('点外部关闭弹层 A', !$('#pop-a').content.classList.contains('is-open'));
+
+  /* ---------- 2. 表单全家桶：各控件在弹层内正常交互 ---------- */
+  $('#b-trigger').click();
+  await wait();
+  ok('弹层 B 打开', $('#pop-b').content.classList.contains('is-open'));
+  // select 打开不关面板
+  $('#b-select').open();
+  await wait();
+  ok('弹层内 select 打开后面板仍在', $('#pop-b').content.classList.contains('is-open'));
+  $('#b-select').close();
+  // combobox 输入
+  const comboInput = $('#b-combo').querySelector('input');
+  comboInput.value = '羽';
+  comboInput.dispatchEvent(new Event('input', { bubbles: true }));
+  $('#b-combo').open();
+  await wait();
+  ok('弹层内 combobox 过滤', $('#b-combo').querySelectorAll('gh-option, [role="option"]:not([hidden])').length >= 1);
+  $('#b-combo').close();
+  // segmented 切换
+  const seg = $('#b-seg');
+  seg.querySelector('[value="high"]').click();
+  await wait();
+  ok('弹层内 segmented 切换', seg.getAttribute('value') === 'high', String(seg.getAttribute('value')));
+  // range 有值
+  ok('弹层内 range 有值', $('#b-range').value === 40, String($('#b-range').value));
+  // checkbox/radio
+  $('#b-check').querySelector('input').click();
+  await wait();
+  ok('弹层内 checkbox 切换', !$('#b-check').checked);
+  $('#b-radio').querySelector('input').click();
+  await wait();
+  ok('弹层内 radio 选中', $('#b-radio').checked);
+  // 点确定按钮不关面板（普通按钮）
+  $('#b-ok').click();
+  await wait();
+  ok('点确定按钮面板仍在', $('#pop-b').content.classList.contains('is-open'));
+  $('#pop-b').close();
+  await wait();
+
+  /* ---------- 3. 超高滚动弹层 ---------- */
+  $('#c-trigger').click();
+  await wait();
+  const cBody = $('#c-body');
+  ok('弹层 C 打开', $('#pop-c').content.classList.contains('is-open'));
+  ok('弹层 C 内容超高可滚动', cBody.scrollHeight > cBody.clientHeight,
+    `scroll=${cBody.scrollHeight} client=${cBody.clientHeight}`);
+  ok('弹层 C 高度被限制', cBody.clientHeight <= 200, String(cBody.clientHeight));
+  $('#pop-c').close();
+  await wait();
+
+  /* ---------- 4. 弹层里嵌 dropdown + select ---------- */
+  $('#d-trigger').click();
+  await wait();
+  ok('弹层 D 打开', $('#pop-d').content.classList.contains('is-open'));
+  // dropdown 打开
+  $('#d-drop-trigger').click();
+  await wait();
+  const dContent = $('#pop-d').content;
+  ok('弹层内 dropdown 打开', dContent.querySelector('gh-dropdown details').open);
+  ok('父弹层 D 仍在', $('#pop-d').content.classList.contains('is-open'));
+  // 关 dropdown，开 select
+  dContent.querySelector('gh-dropdown details').open = false;
+  $('#d-select').open();
+  await wait();
+  ok('弹层内 select 打开后面板仍在', $('#pop-d').content.classList.contains('is-open'));
+  $('#d-select').close();
+  $('#pop-d').close();
+  await wait();
+
+  document.getElementById('out').textContent = results.join('\n');
+});
+</script>
+</body>
+</html>

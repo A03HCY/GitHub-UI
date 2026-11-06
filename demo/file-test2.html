@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>gh-file-picker 断言</title>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body>
+<form id="f">
+  <gh-file-picker id="p1" multiple accept="image/*,.pdf" max-size="1MB" max-files="2" name="files"></gh-file-picker>
+  <gh-file-picker id="p2" accept="image/*" name="single"></gh-file-picker>
+</form>
+<pre id="out"></pre>
+<script>
+  const lines = [];
+  const ok = (name, cond, extra = '') => lines.push(`${cond ? 'PASS' : 'FAIL'} ${name}${extra ? ' → ' + extra : ''}`);
+  const file = (name, size, type) => new File([new Uint8Array(size)], name, { type });
+
+  addEventListener('DOMContentLoaded', () => {
+    const p1 = document.getElementById('p1');
+    const p2 = document.getElementById('p2');
+    const form = document.getElementById('f');
+
+    const png = file('a.png', 10 * 1024, 'image/png');
+    const pdf = file('b.pdf', 20 * 1024, 'application/pdf');
+    const pdf2 = file('c.pdf', 30 * 1024, 'application/pdf');
+
+    p1.add([png, pdf, pdf2]);
+    ok('max-files 截断', p1.files.length === 2, `实际 ${p1.files.length}`);
+    ok('数量超限提示', /最多选择 2 个文件/.test(p1.textContent), p1.querySelector('.gh-file-picker__errors').textContent.trim());
+
+    p1.add([file('virus.exe', 100, 'application/x-msdownload')]);
+    ok('类型校验', p1.files.length === 2 && /格式不支持/.test(p1.textContent));
+
+    p1.add([file('huge.png', 2 * 1024 * 1024, 'image/png')]);
+    ok('大小校验', p1.files.length === 2 && /超过 1 MB/.test(p1.textContent));
+
+    p1.add([png]);
+    ok('重复文件忽略', p1.files.length === 2, `实际 ${p1.files.length}`);
+
+    const fd = new FormData(form);
+    ok('FormData 带文件', fd.getAll('files').length === 2, `实际 ${fd.getAll('files').length}`);
+
+    p1.remove(png);
+    ok('移除单个', p1.files.length === 1 && p1.files[0].name === 'b.pdf');
+
+    p2.add(file('x.png', 100, 'image/png'));
+    p2.add(file('y.png', 100, 'image/png'));
+    ok('单选替换', p2.files.length === 1 && p2.files[0].name === 'y.png', p2.files.map((x) => x.name).join(','));
+
+    p2.clear();
+    // 拖拽
+    const dt = new DataTransfer();
+    dt.items.add(file('drop.png', 10, 'image/png'));
+    p2._zone.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    ok('拖拽加入', p2.files.length === 1 && p2.files[0].name === 'drop.png', p2.files.map((f) => f.name).join(','));
+
+    // 粘贴
+    const dt2 = new DataTransfer();
+    dt2.items.add(file('paste.png', 10, 'image/png'));
+    p2._zone.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt2 }));
+    ok('粘贴加入', p2.files.length === 1 && p2.files[0].name === 'paste.png', p2.files.map((f) => f.name).join(','));
+
+    // 拖进来一个不支持的类型
+    const dt3 = new DataTransfer();
+    dt3.items.add(file('evil.exe', 10, 'application/x-msdownload'));
+    p2._zone.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt3 }));
+    ok('拖拽也走校验', p2.files.length === 1 && /格式不支持/.test(p2.textContent), p2.files.map((f) => f.name).join(','));
+
+    p2.clear();
+    const afterClear = new FormData(form).getAll('single');
+    ok('清空', p2.files.length === 0 && afterClear.every((f) => !f.name),
+      afterClear.map((f) => `[${f.name}|${f.size}]`).join(','));
+
+    document.getElementById('out').textContent = lines.join('\n');
+    document.title = lines.some((l) => l.startsWith('FAIL')) ? 'FAILED' : 'ALL PASS';
+  });
+</script>
+</body>
+</html>

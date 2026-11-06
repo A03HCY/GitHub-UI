@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>简化写法断言</title>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body style="padding:20px;font-family:-apple-system,'PingFang SC',sans-serif">
+
+<gh-select-menu id="ask" icon="comment" label="Ask" value="ask">
+  <option value="ask">Ask</option>
+  <option value="agent">Agent</option>
+  <option value="debug">Debug</option>
+</gh-select-menu>
+
+<gh-select-menu id="repo" multiple searchable label="All repositories" summary="{count} repositories" width="420px">
+  <optgroup label="我的仓库">
+    <option value="orbit">A03HCY/Orbit</option>
+    <option value="learn">A03HCY/Learn-Everything</option>
+  </optgroup>
+  <option value="docs">TeamFlow/docs</option>
+</gh-select-menu>
+
+<gh-select-menu id="bal" label="Optimized for: Balance" label-prefix="Optimized for: ">
+  <option value="efficiency" desc="Prioritizes speed and efficiency">Efficiency</option>
+  <option value="balance" desc="Balances speed and intelligence" selected>Balance</option>
+  <option value="intelligence" desc="Prioritizes intelligence">Intelligence</option>
+</gh-select-menu>
+
+<gh-select-menu id="off" icon="cpu" label="Disabled" disabled>
+  <option value="a">A</option>
+</gh-select-menu>
+
+<gh-dropdown id="dd">
+  <gh-btn>分支 <gh-icon name="triangle-down"></gh-icon></gh-btn>
+  <gh-menu-item id="mi1" icon="git-branch" href="#" value="main">main</gh-menu-item>
+  <gh-menu-item id="mi2" icon="copy" shortcut="Ctrl C">复制链接</gh-menu-item>
+  <hr>
+  <gh-menu-item id="mi3" icon="trash" danger>删除仓库</gh-menu-item>
+  <gh-menu-item id="mi4" icon="lock" disabled>受保护</gh-menu-item>
+</gh-dropdown>
+
+<gh-btn id="opener" data-gh-open="dlg">打开对话框</gh-btn>
+<gh-dialog id="dlg" title="测试">
+  <div>内容</div>
+  <div slot="footer">
+    <gh-btn data-gh-close id="closer">取消</gh-btn>
+  </div>
+</gh-dialog>
+
+<gh-steps current="1">
+  <gh-step meta="10 月 12 日">创建分支</gh-step>
+  <gh-step meta="进行中">提交变更</gh-step>
+  <gh-step>代码评审</gh-step>
+</gh-steps>
+
+<pre id="out"></pre>
+<script>
+const lines = [];
+window.onerror = (m, src, ln, col, err) => { lines.push('ERROR ' + m + ' @' + ln + ':' + col); document.getElementById('out').textContent = lines.join('\n'); };
+const ok = (n, c, x = '') => lines.push((c ? 'PASS ' : 'FAIL ') + n + (x ? ' → ' + x : ''));
+
+addEventListener('DOMContentLoaded', () => setTimeout(() => {
+  const ask = document.getElementById('ask');
+  const label = () => ask.querySelector('.gh-select-menu__label').textContent;
+  ok('初始 value 生效', ask.value === 'ask', ask.value);
+  ok('按钮文案取自选中项', label() === 'Ask', label());
+  ok('弹层内含列表', !!ask.list);
+
+  const list = ask.list;
+  ask.open();
+  ok('open() 打开弹层', document.querySelectorAll('.gh-popover.is-open').length === 1);
+  list.querySelector('[value="agent"]').click();
+  ok('点选后按钮回填', label() === 'Agent' && ask.value === 'agent', label() + '/' + ask.value);
+  ok('单选后自动关闭', document.querySelectorAll('.gh-popover.is-open').length === 0);
+
+  // 多选：optgroup + option 自动转换
+  const repo = document.getElementById('repo');
+  const rlist = repo.list;
+  ok('原生 option 转 gh-option', rlist.querySelectorAll('gh-option').length === 3,
+    String(rlist.querySelectorAll('gh-option').length));
+  ok('optgroup 转分组', rlist.querySelectorAll('gh-option-group').length === 1);
+  ok('分组标题正确', rlist.querySelector('.gh-option-group__label').textContent === '我的仓库',
+    rlist.querySelector('.gh-option-group__label').textContent);
+
+  repo.open();
+  rlist.querySelector('[value="orbit"]').click();
+  ok('多选 1 项显示名称', repo.querySelector('.gh-select-menu__label').textContent === 'A03HCY/Orbit',
+    repo.querySelector('.gh-select-menu__label').textContent);
+  rlist.querySelector('[value="docs"]').click();
+  ok('多选多项用 summary', repo.querySelector('.gh-select-menu__label').textContent === '2 repositories',
+    repo.querySelector('.gh-select-menu__label').textContent);
+  ok('多选后保持打开', document.querySelectorAll('.gh-popover.is-open').length === 1);
+  repo.close();
+
+  // 描述型选项
+  const bal = document.getElementById('bal');
+  bal.list.querySelector('[value="intelligence"]').click();
+  ok('label-prefix 前缀保留', bal.querySelector('.gh-select-menu__label').textContent === 'Optimized for: Intelligence',
+    bal.querySelector('.gh-select-menu__label').textContent);
+
+  // 禁用
+  const off = document.getElementById('off');
+  ok('disabled 传给按钮', off.querySelector('gh-btn').classList.contains('gh-btn--disabled'));
+
+  // gh-menu-item
+  const dd = document.getElementById('dd');
+  const mi1 = document.getElementById('mi1');
+  const inner = mi1.querySelector('a.gh-menu__item');
+  ok('href 渲染成 a', !!inner && inner.getAttribute('href') === '#');
+  ok('无 href 渲染成 button', document.getElementById('mi2').querySelector('button.gh-menu__item') !== null);
+  ok('danger 类生效', document.getElementById('mi3').querySelector('.gh-menu__item--danger') !== null);
+  ok('disabled 生效', document.getElementById('mi4').querySelector('[disabled]') !== null);
+
+  const picks = [];
+  dd.addEventListener('gh:select', (e) => picks.push(e.detail.value));
+  document.getElementById('mi2').querySelector('button').click();
+  ok('gh:select 带 value', picks[0] === '复制链接', picks[0]);
+  dd.querySelector('details').open = true;
+  document.getElementById('mi2').querySelector('button').click();
+  ok('点菜单项后收起', !dd.querySelector('details').open);
+
+  // data-gh-open / close
+  const dlg = document.getElementById('dlg');
+  document.getElementById('opener').click();
+  ok('data-gh-open 打开弹窗', dlg.hasAttribute('open'));
+  document.getElementById('closer').click();
+  ok('data-gh-close 关闭弹窗', !dlg.hasAttribute('open'));
+
+  // 步骤条：内容当标题
+  const steps = document.querySelectorAll('gh-step');
+  ok('无 title 时内容当标题', steps[0].querySelector('.gh-step__title').textContent === '创建分支',
+    steps[0].querySelector('.gh-step__title').textContent);
+  ok('meta 仍生效', steps[0].querySelector('.gh-step__meta').textContent === '10 月 12 日');
+  ok('title 属性不再触发原生 tooltip', !steps[0].hasAttribute('title'));
+
+  document.getElementById('out').textContent = lines.join('\n');
+}, 300));
+</script>
+</body>
+</html>

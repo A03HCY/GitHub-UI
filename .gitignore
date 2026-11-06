@@ -1,0 +1,8 @@
+node_modules/
+.edge-*/
+demo/.*
+demo/_*
+_*.txt
+*.log
+.DS_Store
+Thumbs.db

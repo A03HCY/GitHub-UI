@@ -1,0 +1,2782 @@
+/* components.css — 所有组件样式。选择器一律落在 .gh-* 类上，Light DOM 可被用户覆盖 */
+
+/* ============ 基础 ============ */
+gh-icon { display: inline-flex; vertical-align: text-bottom; line-height: 0; position: relative; }
+/* 图标与文字的光学对齐：16px 图标的视觉重心比同字号文字的 x-height 中心略高，统一下移半个像素。
+   只作用于 svg 本身，避免影响挂载在 gh-icon 上的 gh-badge 定位。 */
+gh-icon > svg,
+.gh-btn > svg,
+.gh-tab > svg,
+.gh-menu__item > svg,
+.gh-segment > svg,
+.gh-dropdown__menu > a > svg,
+.gh-dropdown__menu > button > svg { transform: translateY(.5px); }
+/* 纯图标按钮没有文字可对齐，保持几何居中 */
+.gh-btn--icon > gh-icon > svg { transform: none; }
+
+
+/* ============ 未升级兜底 ============ */
+/* JS 尚未注册组件时：隐藏会被重排的裸子节点，代码块先用接近最终形态的排版占位，避免闪一下原始文本 */
+gh-select:not(:defined) > option,
+gh-combobox:not(:defined) > option,
+gh-tag-input:not(:defined) > option { display: none; }
+gh-code-block:not(:defined) {
+  display: block; white-space: pre; overflow-x: auto;
+  padding: 12px 16px;
+  font-family: var(--gh-mono); font-size: 12px; line-height: 20px;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas-subtle);
+}
+gh-badge:not(:defined), gh-progress:not(:defined), gh-progress-circle:not(:defined),
+gh-skeleton:not(:defined), gh-pagination:not(:defined), gh-steps:not(:defined),
+gh-segmented:not(:defined), gh-split-button:not(:defined) { display: none; }
+
+/* ============ gh-btn ============ */
+.gh-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 16px; box-sizing: border-box;
+  font-size: 14px; font-weight: 500; line-height: 20px;
+  font-family: inherit; text-decoration: none; cursor: pointer; user-select: none;
+  white-space: nowrap;
+  border-radius: var(--gh-radius); border: 1px solid var(--gh-border);
+  background: var(--gh-canvas-subtle); color: var(--gh-fg);
+  transition: background-color .15s, border-color .15s;
+}
+.gh-btn:hover { background: var(--gh-canvas-hover); border-color: var(--gh-fg-muted); }
+.gh-btn:active { background: var(--gh-canvas-subtle); border-color: var(--gh-border); }
+.gh-btn--primary { background: var(--gh-accent-emphasis); border-color: rgba(0,0,0,.15); color: var(--gh-fg-on-emphasis); }
+.gh-btn--primary:hover { background: var(--gh-accent); }
+.gh-btn--danger { color: var(--gh-danger); }
+.gh-btn--danger:hover { background: var(--gh-danger-emphasis); border-color: var(--gh-danger-emphasis); color: var(--gh-fg-on-emphasis); }
+.gh-btn--invisible { background: transparent; border-color: transparent; color: var(--gh-fg-muted); }
+.gh-btn--invisible:hover { background: var(--gh-canvas-hover); border-color: transparent; color: var(--gh-fg); }
+.gh-btn--sm { padding: 3px 12px; font-size: 12px; line-height: 20px; gap: 6px; }
+.gh-btn--lg { padding: 9px 20px; font-size: 15px; }
+.gh-btn--icon {
+  width: var(--gh-control-md); height: var(--gh-control-md); padding: 0;
+  justify-content: center; flex: none;
+}
+.gh-btn--icon svg { width: 16px; height: 16px; }
+.gh-btn--disabled, .gh-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+/* 统一的键盘焦点环 */
+.gh-btn:focus-visible, .gh-tab:focus-visible, .gh-nav-item:focus-visible,
+.gh-alert__dismiss:focus-visible, .gh-dialog__close:focus-visible {
+  outline: none; box-shadow: var(--gh-focus-ring);
+}
+
+/* ============ gh-alert ============ */
+.gh-alert {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 16px; border-radius: var(--gh-radius);
+  border: 1px solid var(--gh-border); background: var(--gh-canvas-subtle);
+  color: var(--gh-fg); font-size: 14px; line-height: 1.5;
+}
+/* 图标盒 = 一个行高，内部居中：圆心正好落在首行文字的中心线上（em 单位，改字号也不会跑） */
+.gh-alert__icon {
+  flex: none; display: inline-flex; align-items: center;
+  height: 1.5em; color: var(--gh-fg-muted); line-height: 0;
+}
+.gh-alert__body { flex: 1; min-width: 0; }
+.gh-alert--note { border-color: var(--gh-accent); background: var(--gh-accent-subtle); }
+.gh-alert--note .gh-alert__icon { color: var(--gh-accent); }
+.gh-alert--success { border-color: var(--gh-success); background: var(--gh-success-subtle); }
+.gh-alert--success .gh-alert__icon { color: var(--gh-success); }
+.gh-alert--warning { border-color: var(--gh-warning); background: var(--gh-warning-subtle); }
+.gh-alert--warning .gh-alert__icon { color: var(--gh-warning); }
+.gh-alert--danger { border-color: var(--gh-danger); background: var(--gh-danger-subtle); }
+.gh-alert--danger .gh-alert__icon { color: var(--gh-danger); }
+.gh-alert__dismiss {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0;
+  /* 与首行文字的墨迹中心同一条线：8(padding) + 1(border) + 11 = 20 */
+  margin: 0 -6px 0 0;
+  border: none; background: none; cursor: pointer;
+  color: inherit; opacity: .6; border-radius: var(--gh-radius); line-height: 0;
+}
+.gh-alert__dismiss:hover { opacity: 1; }
+
+/* ============ gh-label ============ */
+.gh-label {
+  display: inline-block; padding: 0 8px;
+  font-size: 12px; font-weight: 500; line-height: 18px;
+  border-radius: 2em; background: var(--gh-canvas-hover);
+  border: 1px solid var(--gh-border); color: var(--gh-fg-muted);
+  white-space: nowrap;
+}
+
+/* ============ gh-avatar ============ */
+.gh-avatar {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; flex-shrink: 0;
+  border: 1px solid var(--gh-border); background: var(--gh-canvas-hover);
+  box-shadow: 0 0 0 1px rgba(31,35,40,.04);
+}
+.gh-avatar--letter { font-weight: 500; color: var(--gh-fg); }
+.gh-avatar__text { line-height: 1; }
+
+/* ============ gh-box ============ */
+.gh-box {
+  display: block; border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius); background: var(--gh-canvas);
+}
+.gh-box__header {
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  background: var(--gh-canvas-subtle);
+  border-bottom: 1px solid var(--gh-border); border-radius: var(--gh-radius) var(--gh-radius) 0 0;
+}
+.gh-box__body { padding: 16px; }
+/* plain：无底色的标题卡，用于更新日志/公告这类展示卡 */
+.gh-box--plain { border-radius: var(--gh-radius-lg); }
+.gh-box--plain .gh-box__header {
+  padding: 20px 20px 6px; background: transparent; border-bottom: 0;
+  font-size: 17px; line-height: 24px;
+}
+.gh-box--plain .gh-box__body { padding: 0 20px 18px; }
+/* 没有内容时只保留标题，底边框和圆角要跟着收 */
+.gh-box__header:last-child {
+  border-bottom: none;
+  border-radius: var(--gh-radius);
+}
+/* 自定义顶栏：slot="bar" 居左，slot="bar-end" 居右；通栏、底色同标题栏 */
+.gh-box__bar {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 48px; padding: 6px 12px; box-sizing: border-box;
+  background: var(--gh-canvas-subtle);
+  border-bottom: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius) var(--gh-radius) 0 0;
+}
+.gh-box__bar-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+/* 只写了 bar-end 时也要靠右 */
+.gh-box__bar-end { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+/* 只有顶栏没有内容时，底边框和圆角跟着收 */
+.gh-box__bar:last-child {
+  border-bottom: none;
+  border-radius: var(--gh-radius);
+}
+/* 内嵌 tab：slot="tabs"（通常是 <gh-tabs>）挂成卡片顶部一整行；
+   分隔线画在整行的 inset 阴影上（含右侧 tabs-end 操作区），所以只有一条；
+   胶囊左右缩进 12px 与顶栏内容对齐。紧跟在顶栏后面时，顶栏自己的底边线让位，
+   避免出现两条紧挨着的分割线。 */
+.gh-box__tabs { display: flex; align-items: stretch; box-shadow: inset 0 -1px var(--gh-border); }
+.gh-box__tabs .gh-tabs { flex: 1 1 auto; min-width: 0; }
+.gh-box__tabs .gh-tabs__list { box-shadow: none; padding-inline: 12px; }
+.gh-box__tabs-end {
+  display: flex; align-items: center; gap: 8px; flex: none;
+  padding: 0 12px 0 8px;
+}
+.gh-box__tabs:first-child { border-radius: var(--gh-radius) var(--gh-radius) 0 0; }
+.gh-box__tabs:first-child .gh-tabs__list { border-radius: var(--gh-radius) var(--gh-radius) 0 0; }
+/* 顶栏 + tabs 相邻时只留 tabs 那一条线 */
+.gh-box__bar:has(+ .gh-box__tabs) { border-bottom: 0; }
+/* sticky：卡片下滑时顶栏吸附在视口顶部，顶栏下的 tabs 行贴着它一起上吸；
+   吸附线默认 0，可用 sticky-offset 或 --gh-box-sticky-top 让出固定导航；
+   顶栏高度由组件写进 --gh-box-bar-h，tabs 用它算自己的 top */
+.gh-box--sticky { --gh-box-sticky-top: 0px; }
+.gh-box--sticky .gh-box__bar,
+.gh-box--sticky .gh-box__header {
+  position: sticky; top: var(--gh-box-sticky-top, 0px); z-index: 2;
+}
+.gh-box--sticky .gh-box__tabs {
+  position: sticky; top: calc(var(--gh-box-sticky-top, 0px) + var(--gh-box-bar-h, 0px));
+  z-index: 1; background: var(--gh-canvas);
+}
+/* 真正贴住（卡片顶边已经滑过吸附线）时去掉上圆角，贴满视口宽度方向也不露底 */
+.gh-box--sticky.is-stuck .gh-box__bar,
+.gh-box--sticky.is-stuck .gh-box__header {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ============ gh-tabs ============ */
+/* 外层是纵向容器：上面 tablist 行，下面 panels；tablist 才是横向滚动行 */
+.gh-tabs {
+  display: block;
+}
+/* 50px 行高：tab 是 32px 的胶囊（上下各留 9px），行底一条 1px 分割线。
+   指示条是一个独立的绝对定位元素（.gh-tabs__indicator），left/width 由 JS 按
+   当前 tab 的实际盒子写入 CSS 变量，切换时只做 transform/width 过渡 ——
+   所以是「滑过去」而不是在两处各画一条。 */
+.gh-tabs__list {
+  display: flex; gap: 6px; min-height: 50px;
+  position: relative;
+  overflow-x: auto; overflow-y: hidden;
+  /* 分割线画在 padding box 内，选中的 3px 指示条才能正好压住它（与参考图一致） */
+  box-shadow: inset 0 -1px var(--gh-border);
+  scrollbar-width: none;
+}
+.gh-tabs__list::-webkit-scrollbar { display: none; }
+/* 指示条：absolute 在列表里，随横向滚动一起走；bottom 贴住列表底边（压住分割线） */
+.gh-tabs__indicator {
+  position: absolute; left: 0; bottom: 0; z-index: 1;
+  display: none; height: 3px; width: var(--gh-tabs-w, 0px);
+  transform: translateX(var(--gh-tabs-x, 0px));
+  background: var(--gh-tab-indicator); border-radius: 2px 2px 0 0;
+  pointer-events: none;
+}
+/* is-ready 由 JS 在首帧后加上：初次渲染不播放「从 0 宽度长出来」的动画 */
+.gh-tabs__list.is-ready .gh-tabs__indicator {
+  transition: transform .18s cubic-bezier(.2, .7, .3, 1), width .18s cubic-bezier(.2, .7, .3, 1);
+}
+.gh-tabs__panels { display: block; }
+.gh-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  appearance: none; background: none; border: none; cursor: pointer;
+  padding: 6px 12px; margin: 9px 0;
+  font-size: 14px; font-family: inherit; line-height: 20px;
+  color: var(--gh-fg-muted); white-space: nowrap; position: relative;
+  border-radius: var(--gh-radius);
+  transition: background-color .12s ease, color .12s ease;
+}
+.gh-tab:hover { color: var(--gh-fg); background: var(--gh-canvas-hover); }
+/* tab 文字：隐藏的 600 字重副本把宽度预留成「加粗后」的宽度，
+   选中态加粗就不会改变 tab 宽度，切换时整行不抖。 */
+.gh-tab__label { display: inline-block; white-space: nowrap; }
+.gh-tab__label::after {
+  content: attr(data-text);
+  display: block; height: 0; overflow: hidden;
+  visibility: hidden; font-weight: 600; white-space: nowrap;
+}
+/* 选中：加粗 + 行底 3px 橙色指示条（与胶囊等宽，间距 6px）；
+   灰底胶囊只在 hover（含 hover 选中项）时出现，静态选中态保持干净 */
+.gh-tab.is-active {
+  color: var(--gh-fg); font-weight: 600;
+}
+.gh-tab.is-active:hover {
+  background: var(--gh-selected-bg);
+}
+.gh-tab-panel { display: block; }
+.gh-tab-panel[hidden] { display: none; }
+
+/* 弹层/面板顶部的 tab 栏：通栏（负 margin 抵消容器 padding，分割线顶到边缘）。
+   变量由容器提供（弹层 12px、抽屉 16px），tab 自身左右 padding 保持对称，
+   所以胶囊和指示条始终同宽、同起点。 */
+.gh-tabs--flush .gh-tabs__list {
+  margin: calc(var(--gh-tabs-flush-pad, 12px) * -1) calc(var(--gh-tabs-flush-pad, 12px) * -1) 0;
+  padding: 0 var(--gh-tabs-flush-pad, 12px);
+}
+
+/* ============ gh-dialog 样式见文件末尾的增强块 ============ */
+.gh-dialog__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border-bottom: 1px solid var(--gh-border-muted);
+}
+.gh-dialog__title { font-size: 14px; font-weight: 600; }
+.gh-dialog__close {
+  border: none; background: none; cursor: pointer; padding: 4px;
+  color: var(--gh-fg-muted); border-radius: var(--gh-radius); line-height: 0;
+}
+.gh-dialog__close:hover { color: var(--gh-fg); background: var(--gh-canvas-hover); }
+.gh-dialog__body { padding: 16px; font-size: 14px; overflow-y: auto; }
+
+/* ============ 菜单外观（gh-dropdown 与 gh-select 共用） ============ */
+.gh-menu {
+  --gh-menu-pad: 8px;
+  --gh-menu-pad-x: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: var(--gh-menu-pad) var(--gh-menu-pad-x); box-sizing: border-box;
+  overflow-x: hidden;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius-lg); box-shadow: var(--gh-shadow);
+  animation: gh-menu-in .12s ease;
+}
+@keyframes gh-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.gh-menu__item,
+.gh-dropdown__menu a, .gh-dropdown__menu button {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 6px 8px; box-sizing: border-box;
+  font-size: 14px; line-height: 20px; font-family: inherit;
+  color: var(--gh-fg); text-decoration: none; text-align: left;
+  background: none; border: none; border-radius: var(--gh-radius); cursor: pointer;
+}
+.gh-menu__item:hover, .gh-menu__item.is-active,
+.gh-dropdown__menu a:hover, .gh-dropdown__menu button:hover { background: var(--gh-row-bg-cursor); color: var(--gh-fg); }
+.gh-menu__item:focus-visible,
+.gh-dropdown__menu a:focus-visible, .gh-dropdown__menu button:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-menu__item:disabled { opacity: .5; cursor: not-allowed; }
+/* 菜单项图标：作为 flex 项不压缩，颜色随 item 走 */
+.gh-menu__item gh-icon,
+.gh-dropdown__menu a gh-icon, .gh-dropdown__menu button gh-icon {
+  flex: none; color: var(--gh-fg-muted); line-height: 0;
+}
+.gh-menu__hint { margin-left: auto; font-size: 12px; color: var(--gh-fg-muted); }
+/* 菜单项：宿主只做语法糖，布局交给内部的 a / button */
+gh-menu-item { display: contents; }
+gh-menu-item > .gh-menu__item { white-space: nowrap; }
+gh-menu-item > .gh-menu__item > span:not(.gh-menu__hint) {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+.gh-menu__item--danger, .gh-dropdown__menu .gh-menu__item--danger { color: var(--gh-danger); }
+.gh-menu__item--danger:hover,
+.gh-dropdown__menu .gh-menu__item--danger:hover { background: var(--gh-danger-subtle); color: var(--gh-danger); }
+.gh-menu__item--danger gh-icon,
+.gh-dropdown__menu .gh-menu__item--danger gh-icon { color: currentColor; }
+.gh-menu__check { display: none; margin-left: auto; color: var(--gh-accent); line-height: 0; }
+.gh-menu__item[aria-selected="true"] .gh-menu__check { display: flex; }
+.gh-menu__item svg,
+.gh-dropdown__menu a svg, .gh-dropdown__menu button svg { flex: none; color: var(--gh-fg-muted); }
+
+/* —— 菜单分组：小标题、分隔线、嵌套子菜单、当前项（侧边导航） ——
+   小标题与分隔线让一整个面板能分节；.gh-menu__sub 承载可展开项的下一级；
+   当前项是「灰底胶囊 + 左侧 3px 强调条」，强调条留在菜单内边距里，与胶囊留出间隙。 */
+.gh-menu__heading {
+  margin: 8px 0 0; padding: 6px 8px 4px;
+  font-size: 12px; font-weight: 600; line-height: 16px;
+  color: var(--gh-fg-muted);
+}
+.gh-menu__heading:first-child { margin-top: 0; }
+.gh-menu__divider,
+.gh-menu > hr {
+  flex: none; height: 1px; margin: 6px calc(var(--gh-menu-pad-x, 12px) * -1);
+  padding: 0; border: 0; background: var(--gh-border);
+}
+.gh-menu__sub {
+  --gh-menu-indent: 24px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+/* 子项：胶囊铺满整行（和顶层项同宽、同左缘），缩进只加在内容上 ——
+   于是「灰底胶囊」和「左侧强调条」都与顶层项落在同一竖线，条紧贴胶囊。 */
+.gh-menu__sub .gh-menu__item {
+  padding-left: calc(var(--gh-menu-indent) + 8px);
+}
+.gh-menu__sub[hidden] { display: none; }
+/* ============ 行状态：current / selected / cursor ============ */
+/* 一行会不会变灰底、有没有左侧强调条，只看 ARIA：
+     aria-current="page"（当前项，同一容器互斥）、aria-selected="true"（选中，可多项）、
+     .is-cursor（浮层里 ↑↓ 移动的游标）。颜色与几何全部来自 --gh-row-* 令牌。
+   强调条统一落在行左缘外侧 --gh-row-bar-inset（默认 7px）处、高度统一 20px，条与胶囊之间留 4px：
+   菜单、嵌套项、plain、侧栏展开/折叠、导航行、自定义 .gh-row 都是同一个位置，
+   容器不再各自折算 left / height（以前菜单按 pad 算、侧栏 12px、弹层 8px，导致条离胶囊远近不一）。
+   弹层里那种带复选框的列表行不画条：选中状态由复选框表达，悬停只换底色。 */
+
+/* 行盒子：给自己拼的行用。选择器权重是 0，组件行自带的 padding / 高度优先，
+   所以给组件行加 .gh-row 不会改变它的布局，只多出状态样式。 */
+:where(.gh-row) {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--gh-row-gap);
+  /* min-height 是「整行高度」：必须 border-box，否则自带上下内边距的行（如弹层勾选行）
+     会变成 min-height + padding，没有说明文字时下方多出空白 */
+  box-sizing: border-box;
+  min-height: var(--gh-row-height);
+  padding: 0 var(--gh-row-pad-x);
+  border-radius: var(--gh-row-radius);
+  cursor: pointer;
+}
+
+/* 当前项：灰底胶囊 + 左侧强调条 */
+.gh-row:is([aria-current="page"], .is-current) {
+  background: var(--gh-row-bg-current);
+  color: var(--gh-row-fg-current);
+}
+.gh-row:is([aria-current="page"], .is-current):hover { background: var(--gh-row-bg-current); }
+.gh-row:is([aria-current="page"], .is-current)::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--gh-row-bar-inset, 7px) * -1);
+  width: var(--gh-row-bar-width);
+  height: var(--gh-row-bar-height);
+  margin-top: calc(var(--gh-row-bar-height) / -2);
+  border-radius: var(--gh-row-bar-radius);
+  background: var(--gh-row-bar-color);
+}
+/* 兼容旧写法：导航行 / 弹层行以前用 .is-active 表示当前项（弹层行只上底色，不画条） */
+.gh-nav-item.is-active,
+.gh-popover__item.is-active {
+  background: var(--gh-row-bg-current);
+  color: var(--gh-row-fg-current);
+}
+.gh-nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--gh-row-bar-inset, 7px) * -1);
+  width: var(--gh-row-bar-width);
+  height: var(--gh-row-bar-height);
+  margin-top: calc(var(--gh-row-bar-height) / -2);
+  border-radius: var(--gh-row-bar-radius);
+  background: var(--gh-row-bar-color);
+}
+/* 选中（多选 / 列表行）：浅底，不带条 */
+.gh-row[aria-selected="true"] { background: var(--gh-row-bg-selected); }
+/* 键盘游标：浮层里 ↑↓ 移动的那一行 */
+.gh-row.is-cursor { background: var(--gh-row-bg-cursor); }
+/* 弹层行：勾选列表不画强调条 —— 选中与否由 16px 复选框本身表达，
+   悬停只换底色（--gh-canvas-hover），不再像菜单那样露蓝色当前项条。 */
+.gh-menu__chevron {
+  margin-left: auto; display: inline-flex; line-height: 0;
+  color: var(--gh-fg-muted);
+  transition: transform .15s ease;
+}
+.gh-menu__chevron svg { display: block; width: 16px; height: 16px; }
+.gh-menu__item--expandable[aria-expanded="true"] .gh-menu__chevron { transform: rotate(180deg); }
+/* plain：去掉外壳与内边距，嵌在侧栏 / 卡片里用 */
+.gh-menu--plain {
+  --gh-menu-pad: 0px;
+  padding: 0; border: none; border-radius: 0;
+  background: transparent; box-shadow: none; animation: none;
+}
+
+/* ============ gh-dropdown ============ */
+.gh-dropdown { position: relative; display: inline-block; }
+.gh-dropdown summary { list-style: none; cursor: pointer; display: inline-flex; }
+.gh-dropdown summary::-webkit-details-marker { display: none; }
+.gh-dropdown summary:focus-visible { outline: none; }
+.gh-dropdown summary:focus-visible .gh-btn { box-shadow: var(--gh-focus-ring); }
+.gh-dropdown__menu {
+  position: absolute; z-index: 1100;
+  min-width: 192px; max-height: min(320px, 60vh); overflow-y: auto;
+}
+.gh-dropdown--right .gh-dropdown__menu { left: auto; right: 0; }
+.gh-dropdown.is-flip .gh-dropdown__menu { top: auto; bottom: calc(100% + 4px); }
+.gh-dropdown__menu hr {
+  height: 1px; margin: 4px calc(var(--gh-menu-pad-x, 12px) * -1); border: none;
+  background: var(--gh-border-muted);
+}
+
+/* ============ gh-timeline ============ */
+.gh-timeline { display: block; }
+.gh-timeline__item { display: flex; gap: 12px; position: relative; padding-bottom: 16px; }
+.gh-timeline__item:last-child { padding-bottom: 0; }
+/* 标记列固定 32px：不管标记是 28 圆圈、32 头像还是 16 图标，正文都从同一条竖线开始 */
+.gh-timeline__item::before {
+  content: ""; position: absolute; left: 15px; top: 32px; bottom: -2px;
+  width: 2px; background: var(--gh-border);
+}
+.gh-timeline__item:last-child::before { display: none; }
+.gh-timeline__marker {
+  width: 32px; height: 32px; flex: none; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gh-fg-muted);
+}
+/* 真正的圆形标记：28px，居中在 32px 列里 */
+.gh-timeline__marker-inner {
+  box-sizing: border-box; width: 28px; height: 28px; flex: none;
+  display: flex; align-items: center; justify-content: center; line-height: 0;
+  border-radius: 50%; border: 1px solid var(--gh-border);
+  background: var(--gh-canvas);
+}
+.gh-timeline__item--success .gh-timeline__marker { color: var(--gh-success); }
+.gh-timeline__item--success .gh-timeline__marker-inner { border-color: var(--gh-success); }
+.gh-timeline__item--danger .gh-timeline__marker { color: var(--gh-danger); }
+.gh-timeline__item--danger .gh-timeline__marker-inner { border-color: var(--gh-danger); }
+.gh-timeline__item--accent .gh-timeline__marker { color: var(--gh-accent); }
+.gh-timeline__item--accent .gh-timeline__marker-inner { border-color: var(--gh-accent); }
+.gh-timeline__body { flex: 1; min-width: 0; font-size: 14px; padding-top: 4px; }
+.gh-timeline__marker[hidden] { display: none; }
+/* 时间行：更新日志/动态列表的「11 hours ago」 */
+.gh-timeline__time {
+  display: block; font-size: 13px; line-height: 18px;
+  color: var(--gh-fg-muted); font-variant-numeric: tabular-nums;
+}
+.gh-timeline__time[hidden] { display: none; }
+
+/* 紧凑模式：10px 圆点 + 更密的节奏 */
+.gh-timeline--compact .gh-timeline__item { gap: 24px; padding-bottom: 22px; }
+.gh-timeline--compact .gh-timeline__item--nodot { padding-bottom: 0; padding-top: 10px; }
+/* 隐藏圆点但保留占位，文字仍与上面几条左对齐 */
+.gh-timeline__item--nodot .gh-timeline__marker { visibility: hidden; }
+.gh-timeline--compact .gh-timeline__marker { width: 10px; height: 10px; margin-top: 4px; }
+.gh-timeline--compact .gh-timeline__marker-inner {
+  width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--gh-border);
+}
+.gh-timeline--compact .gh-timeline__marker svg { display: none; }
+.gh-timeline--compact .gh-timeline__item::before {
+  left: 4px; top: 14px; bottom: -4px; width: 2px;
+  background: var(--gh-border-muted);
+}
+.gh-timeline--compact .gh-timeline__body { padding-top: 0; font-size: 15px; line-height: 24px; }
+.gh-timeline--compact .gh-timeline__body a { color: inherit; text-decoration: none; }
+.gh-timeline--compact .gh-timeline__body a:hover { text-decoration: underline; }
+.gh-timeline__body > :first-child { margin-top: 0; }
+.gh-timeline__body > :last-child { margin-bottom: 0; }
+
+/* 富内容：条目里可以直接串入 gh-md / gh-box / 代码块 */
+
+.gh-timeline__body :is(gh-md, gh-box) { display: block; }
+.gh-timeline__body :is(pre, table) { max-width: 100%; }
+.gh-timeline__body img { max-width: 100%; height: auto; }
+
+/* 头像 / 自定义标记：列宽仍是 32px，内层去掉圆圈描边与底色 */
+.gh-timeline__marker--avatar .gh-timeline__marker-inner,
+.gh-timeline__marker--custom .gh-timeline__marker-inner {
+  width: 32px; height: 32px; border: 0; background: transparent;
+}
+.gh-timeline__avatar { display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+
+/* 标题行：作者 / 动作 / 时间（左）+ 徽章、菜单（右） */
+.gh-timeline__header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.gh-timeline__header[hidden],
+.gh-timeline__footer[hidden] { display: none; }
+.gh-timeline__header-main {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  font-size: 14px; line-height: 20px; color: var(--gh-fg-muted);
+}
+.gh-timeline__header-main strong { color: var(--gh-fg); font-weight: 600; }
+.gh-timeline__header-main time { color: var(--gh-fg-muted); }
+.gh-timeline__header-end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+/* 标题行右侧的链接（“查看审查的更改”之类）用中性色，hover 才上色 */
+.gh-timeline__header-end a { color: var(--gh-fg-muted); text-decoration: none; }
+.gh-timeline__header-end a:hover { color: var(--gh-accent); text-decoration: underline; }
+/* bare：标记只留图标，不画圆圈（提交 / 审查这类轻量行） */
+.gh-timeline__item--bare .gh-timeline__marker { color: var(--gh-fg-muted); }
+.gh-timeline__item--bare .gh-timeline__marker-inner {
+  width: 16px; height: 16px; border: 0; background: transparent;
+}
+.gh-timeline__item--bare .gh-timeline__marker svg { width: 16px; height: 16px; }
+/* boxed：标题行套一层虚线框，像提交摘要 */
+.gh-timeline__item--boxed .gh-timeline__header {
+  margin-bottom: 0; padding: 6px 8px;
+  border: 1px dashed var(--gh-border); border-radius: var(--gh-radius);
+}
+.gh-timeline__item--boxed .gh-timeline__header-main {
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+}
+.gh-timeline__item--boxed .gh-timeline__header-main strong { font-weight: 600; }
+.gh-timeline__item--boxed .gh-timeline__header-main > :is(gh-avatar, img) { flex: none; }
+.gh-timeline__item--boxed .gh-timeline__header-main span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}/* 虚线框行没有正文，去掉 body 的 4px 顶部内边距，标记图标与框居中对齐 */
+.gh-timeline__item--boxed .gh-timeline__body { padding-top: 0; }
+
+/* ============ gh-reactions（表情反应条） ============ */
+.gh-reactions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.gh-reaction { display: inline-flex; }
+.gh-reaction__btn,
+.gh-reactions__add {
+  display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; height: 26px; padding: 0 8px;
+  border: 1px solid var(--gh-border); border-radius: 2em;
+  background: var(--gh-canvas); color: var(--gh-fg-muted);
+  font: inherit; font-size: 12px; font-weight: 500; line-height: 1; cursor: pointer;
+}
+.gh-reaction__btn { gap: 4px; }
+.gh-reaction__emoji { font-size: 14px; line-height: 1; }
+.gh-reaction__count { font-variant-numeric: tabular-nums; }
+.gh-reaction__count[hidden] { display: none; }
+.gh-reaction__btn:hover,
+.gh-reactions__add:hover {
+  border-color: var(--gh-accent); color: var(--gh-accent); background: var(--gh-accent-subtle);
+}
+.gh-reaction.is-active .gh-reaction__btn {
+  border-color: var(--gh-accent); color: var(--gh-accent); background: var(--gh-accent-subtle);
+}
+.gh-reactions__add { width: 26px; padding: 0; }
+.gh-reactions__add svg { display: block; width: 16px; height: 16px; }
+
+/* ============ gh-file-list（折叠文件行） ============ */
+.gh-file-list {
+  display: block; border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas); overflow: hidden;
+}
+.gh-file-row { display: block; }
+.gh-file-row + .gh-file-row { border-top: 1px solid var(--gh-border); }
+.gh-file-row__header {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  box-sizing: border-box; min-height: 40px; padding: 8px 12px;
+  border: 0; background: none; color: var(--gh-fg);
+  font: inherit; font-size: 14px; line-height: 20px; text-align: left; cursor: pointer;
+}
+.gh-file-row__header:hover { background: var(--gh-canvas-hover); }
+.gh-file-row__chevron {
+  display: inline-flex; flex: none; color: var(--gh-fg-muted);
+  transition: transform .15s ease;
+}
+.gh-file-row__chevron svg { display: block; width: 16px; height: 16px; }
+.gh-file-row.is-open .gh-file-row__chevron { transform: rotate(90deg); }
+.gh-file-row__path {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-file-row__state {
+  flex: none; font-size: 12px; font-weight: 600; color: var(--gh-fg-muted);
+}
+.gh-file-row__state[hidden] { display: none; }
+.gh-file-row.is-resolved .gh-file-row__state { color: var(--gh-success); }
+.gh-file-row.is-added .gh-file-row__state { color: var(--gh-success); }
+.gh-file-row.is-removed .gh-file-row__state { color: var(--gh-danger); }
+.gh-file-row.is-modified .gh-file-row__state { color: var(--gh-warning); }
+.gh-file-row.is-renamed .gh-file-row__state { color: var(--gh-accent); }
+.gh-file-row__body { padding: 0 12px 12px 36px; font-size: 13px; }
+.gh-file-row__body[hidden] { display: none; }
+
+/* 卡片模式：评论正文装进带边框的白卡（avatar + card 就是 GitHub 的评论块） */
+.gh-timeline__card { min-width: 0; }
+.gh-timeline__item--card { padding-bottom: 24px; }
+.gh-timeline__item--card .gh-timeline__card {
+  padding: 12px 16px; border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas);
+}
+.gh-timeline__content { min-width: 0; }
+.gh-timeline__content > * { margin-block: 0; }
+.gh-timeline__content > * + * { margin-top: 12px; }
+.gh-timeline__footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ============ gh-contribution ============ */
+/* 贡献活动时间线：月份分组 + 条目（提交分布条形图 / 仓库链接 + 语言与日期） */
+.gh-contribution { display: flex; flex-direction: column; gap: 26px; --gh-contribution-aside: 148px; }
+.gh-contribution__group { display: flex; flex-direction: column; gap: 14px; }
+.gh-contribution__month {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 2px;
+  font-size: 12px; font-weight: 600; line-height: 18px; color: var(--gh-fg-muted);
+}
+.gh-contribution__month::after {
+  content: ''; flex: 1 1 auto; height: 1px; background: var(--gh-border);
+}
+.gh-contribution-item { display: block; }
+.gh-contribution__item { display: flex; align-items: flex-start; gap: 12px; }
+.gh-contribution__icon { flex: none; display: inline-flex; margin-top: 2px; color: var(--gh-fg-muted); }
+.gh-contribution__icon svg { display: block; width: 16px; height: 16px; }
+.gh-contribution__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gh-contribution__title { font-size: 14px; line-height: 20px; color: var(--gh-fg); }
+.gh-contribution__body { display: flex; flex-direction: column; }
+.gh-contribution-repo { display: block; }
+.gh-contribution__row { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.gh-contribution__repo { font-size: 14px; line-height: 20px; color: var(--gh-accent); text-decoration: none; }
+.gh-contribution__repo:hover { text-decoration: underline; }
+/* 提交数：灰字 + 小圆点分隔，作为仓库链接的补充信息而不是第二个链接 */
+.gh-contribution__count {
+  font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gh-contribution__count::before {
+  content: '·'; margin-right: 6px; color: var(--gh-border);
+}
+.gh-contribution__count:empty { display: none; }
+.gh-contribution__count[hidden],
+.gh-contribution__meta[hidden],
+.gh-contribution__lang[hidden],
+.gh-contribution__date[hidden] { display: none; }
+.gh-contribution__meta {
+  display: flex; align-items: center; gap: 10px; margin-left: auto;
+  width: var(--gh-contribution-aside); max-width: 60%;
+  font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+}
+.gh-contribution__lang { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gh-fg-muted); }
+.gh-contribution__lang i {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--gh-contribution-lang, var(--gh-accent-emphasis));
+}
+.gh-contribution__lang[data-language="Python"] i { background: var(--gh-contribution-lang, #3572a5); }
+.gh-contribution__lang[data-language="JavaScript"] i { background: var(--gh-contribution-lang, #f1e05a); }
+.gh-contribution__lang[data-language="TypeScript"] i { background: var(--gh-contribution-lang, #3178c6); }
+.gh-contribution__lang[data-language="Go"] i { background: var(--gh-contribution-lang, #00add8); }
+.gh-contribution__lang[data-language="Rust"] i { background: var(--gh-contribution-lang, #dea584); }
+.gh-contribution__date {
+  margin-left: auto; font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* 右侧提交分布：条越高越深，宽度按该仓库提交数占最大值的比例 */
+.gh-contribution__aside { flex: none; width: var(--gh-contribution-aside); }
+.gh-contribution__aside[hidden] { display: none; }
+.gh-contribution__chart { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; padding-top: 4px; }
+.gh-contribution__chart[hidden] { display: none; }
+.gh-contribution__bar {
+  height: 6px; border-radius: 999px; min-width: 4px;
+  /* 逐级变浅，但保留 55% 下限 —— 1 个提交的那根也要看得见 */
+  background: color-mix(in srgb, var(--gh-success-emphasis) calc(max(55%, 100% - var(--gh-bar-level, 0) * 11%)), transparent);
+  transition: filter .12s ease;
+}
+.gh-contribution__chart:hover .gh-contribution__bar { filter: saturate(1.08) brightness(1.02); }
+.gh-contribution__action {
+  flex: none; width: 24px; height: 24px; padding: 0; margin-top: -2px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: var(--gh-radius); background: transparent;
+  color: var(--gh-fg-muted); cursor: pointer;
+}
+.gh-contribution__action:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-contribution__item:hover .gh-contribution__action { color: var(--gh-fg); }
+.gh-contribution__action[hidden] { display: none; }
+.gh-contribution__action svg { display: block; width: 16px; height: 16px; }
+
+/* ============ 布局 ============ */
+.gh-container { display: block; max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+.gh-container--narrow { max-width: 768px; }
+.gh-container--wide { max-width: none; }
+
+.gh-stack { display: flex; flex-direction: column; }
+
+gh-header {
+  /* 外观由这三个变量决定，variant 只改变量，内部元素无需另写一套 */
+  --gh-appbar-bg: var(--gh-header-bg);
+  --gh-appbar-fg: var(--gh-fg-on-emphasis);
+  --gh-appbar-border: transparent;
+  display: block; padding: 14px 0;
+  background: var(--gh-appbar-bg); color: var(--gh-appbar-fg);
+  border-bottom: 1px solid var(--gh-appbar-border);
+}
+/* variant="light"：强制浅色，深色主题下也是白底 */
+gh-header.gh-header--light {
+  --gh-appbar-bg: var(--gh-appbar-light-bg);
+  --gh-appbar-fg: var(--gh-appbar-light-fg);
+  --gh-appbar-border: var(--gh-appbar-light-border);
+}
+/* variant="auto"：跟随主题（亮色白底、暗色深底） */
+gh-header.gh-header--auto {
+  --gh-appbar-bg: var(--gh-canvas);
+  --gh-appbar-fg: var(--gh-fg);
+  --gh-appbar-border: var(--gh-border);
+}
+gh-header a { color: var(--gh-appbar-fg); opacity: .85; text-decoration: none; }
+gh-header a:hover { opacity: 1; }
+/* 按钮跟随导航条前景色：深浅两种变体共用一套规则 */
+gh-header .gh-btn {
+  color: var(--gh-appbar-fg); background: transparent;
+  border-color: color-mix(in srgb, var(--gh-appbar-fg) 25%, transparent);
+}
+gh-header .gh-btn:hover {
+  background: color-mix(in srgb, var(--gh-appbar-fg) 12%, transparent);
+  border-color: color-mix(in srgb, var(--gh-appbar-fg) 35%, transparent);
+  color: var(--gh-appbar-fg);
+}
+gh-header .gh-btn--invisible {
+  border-color: transparent;
+  color: color-mix(in srgb, var(--gh-appbar-fg) 85%, transparent);
+}
+gh-header .gh-btn--invisible:hover {
+  background: color-mix(in srgb, var(--gh-appbar-fg) 12%, transparent);
+  color: var(--gh-appbar-fg);
+}
+gh-header .gh-btn:active {
+  background: color-mix(in srgb, var(--gh-appbar-fg) 18%, transparent);
+  border-color: color-mix(in srgb, var(--gh-appbar-fg) 40%, transparent);
+}
+
+/* appbar 内嵌 tab：整行贴住导航条底边，分隔线与 tab 指示条仍由 gh-tabs 自绘，
+   用 padding 对齐 gh-container 的内容区，同时让底部分割线通栏 */
+gh-header.gh-header--tabs {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+/* 深色导航条没有现成的边框色，用前景色混出与浅色变体接近的分隔线 */
+gh-header.gh-header--tabs:not(.gh-header--light):not(.gh-header--auto) {
+  --gh-appbar-border: color-mix(in srgb, var(--gh-appbar-fg) 14%, transparent);
+}
+.gh-header__tabs { display: block; margin-top: 10px; }
+.gh-header__tabs .gh-tabs__list {
+  padding-inline: var(--gh-appbar-gutter, max(16px, calc((100% - 1280px) / 2 + 16px)));
+  box-shadow: inset 0 -1px var(--gh-appbar-border);
+}
+.gh-header__tabs .gh-tab { color: color-mix(in srgb, var(--gh-appbar-fg) 78%, transparent); }
+.gh-header__tabs .gh-tab:hover {
+  color: var(--gh-appbar-fg);
+  background: color-mix(in srgb, var(--gh-appbar-fg) 8%, transparent);
+}
+.gh-header__tabs .gh-tab.is-active { color: var(--gh-appbar-fg); }
+.gh-header__tabs .gh-tab.is-active:hover {
+  background: color-mix(in srgb, var(--gh-appbar-fg) 12%, transparent);
+}
+.gh-header__tabs .gh-tabs__indicator { background: var(--gh-tab-indicator); }
+
+/* ============ gh-dialog 增强（footer/wide/动画/滚动锁） ============ */
+.gh-dialog {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(1, 4, 9, .72);
+  align-items: flex-start; justify-content: center;
+  padding: 8vh 16px 16px; overflow-y: auto; overscroll-behavior: contain;
+  animation: gh-fade .12s ease;
+}
+.gh-dialog[open] { display: flex; }
+.gh-dialog__panel {
+  width: min(448px, 100%); max-height: 70vh;
+  display: flex; flex-direction: column;
+  background: var(--gh-dialog-bg); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius-lg); overflow: hidden;
+  box-shadow: var(--gh-shadow); animation: gh-pop .14s ease;
+}
+.gh-dialog--wide .gh-dialog__panel { max-width: 720px; }
+.gh-dialog__panel:focus { outline: none; }
+.gh-dialog__form {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+}
+.gh-dialog__form > .gh-dialog__body { flex: 1; min-height: 0; }
+.gh-dialog__foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 16px; border-top: 1px solid var(--gh-border-muted);
+}
+body.gh-dialog-open, body.gh-scroll-locked { overflow: hidden; }
+@keyframes gh-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gh-pop { from { transform: translateY(-6px) scale(.99); opacity: .6; } to { transform: none; opacity: 1; } }
+
+/* ============ gh-toast ============ */
+#gh-toast-root {
+  position: fixed; right: 18px; bottom: 18px; z-index: 1100;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none; max-width: calc(100vw - 36px);
+}
+.gh-toast {
+  padding: 8px 16px; border-radius: var(--gh-radius); font-size: 13px;
+  cursor: pointer;
+  background: var(--gh-canvas-subtle); border: 1px solid var(--gh-border);
+  color: var(--gh-fg); box-shadow: var(--gh-shadow);
+  max-width: 380px; pointer-events: auto;
+  animation: gh-toast-in .16s ease;
+}
+.gh-toast--ok { border-color: rgba(63, 185, 80, .5); }
+.gh-toast--err { border-color: rgba(248, 81, 73, .5); color: var(--gh-danger); }
+@keyframes gh-toast-in { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ============ gh-spinner ============ */
+gh-spinner { display: inline-flex; line-height: 0; vertical-align: -2px; }
+.gh-spinner {
+  display: inline-block; border-radius: 50%;
+  border: 2px solid var(--gh-border); border-top-color: var(--gh-accent);
+  animation: gh-spin .7s linear infinite;
+}
+@keyframes gh-spin { to { transform: rotate(360deg); } }
+
+/* ============ gh-progress ============ */
+.gh-progress { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.gh-progress__head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 12px; line-height: 16px; color: var(--gh-fg-muted);
+}
+.gh-progress:not(.has-head) .gh-progress__head { display: none; }
+.gh-progress__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-progress__value { flex: none; color: var(--gh-fg); font-variant-numeric: tabular-nums; }
+.gh-progress__track {
+  height: 6px; border-radius: var(--gh-radius-pill); background: var(--gh-border-muted); overflow: hidden;
+}
+.gh-progress__fill {
+  display: block; height: 100%; width: 0;
+  background: var(--gh-accent); border-radius: inherit;
+  transition: width .4s ease;
+}
+.gh-progress--thin .gh-progress__track { height: 4px; }
+.gh-progress--lg .gh-progress__track { height: 10px; }
+.gh-progress--success .gh-progress__fill { background: var(--gh-success); }
+.gh-progress--danger .gh-progress__fill { background: var(--gh-danger); }
+.gh-progress--warning .gh-progress__fill { background: var(--gh-warning); }
+.gh-progress--done .gh-progress__fill { background: var(--gh-done); }
+
+/* 不确定进度：定宽滑块来回跑 */
+.gh-progress--indeterminate .gh-progress__fill {
+  width: 35%; animation: gh-progress-slide 1.3s ease-in-out infinite;
+}
+@keyframes gh-progress-slide {
+  0% { transform: translateX(-105%); }
+  100% { transform: translateX(300%); }
+}
+/* 斜纹（用于“处理中”这类持续状态） */
+.gh-progress--striped .gh-progress__fill {
+  background-image: linear-gradient(45deg,
+    rgba(255, 255, 255, .22) 25%, transparent 25%, transparent 50%,
+    rgba(255, 255, 255, .22) 50%, rgba(255, 255, 255, .22) 75%, transparent 75%);
+  background-size: 12px 12px;
+  animation: gh-progress-stripes .8s linear infinite;
+}
+@keyframes gh-progress-stripes { to { background-position: 12px 0; } }
+
+/* ============ gh-progress-circle ============ */
+.gh-progress-circle {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  flex: none; line-height: 1;
+}
+.gh-progress-circle__svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transform: rotate(-90deg); overflow: visible;
+}
+.gh-progress-circle__track { fill: none; stroke: var(--gh-border-muted); }
+.gh-progress-circle__fill {
+  fill: none; stroke: var(--gh-accent); stroke-linecap: round;
+  transition: stroke-dashoffset .4s ease;
+}
+.gh-progress-circle--success .gh-progress-circle__fill { stroke: var(--gh-success); }
+.gh-progress-circle--danger .gh-progress-circle__fill { stroke: var(--gh-danger); }
+.gh-progress-circle--warning .gh-progress-circle__fill { stroke: var(--gh-warning); }
+.gh-progress-circle--done .gh-progress-circle__fill { stroke: var(--gh-done); }
+.gh-progress-circle__content {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+.gh-progress-circle__pct {
+  font-size: 1em; font-weight: 600; color: var(--gh-fg);
+  font-variant-numeric: tabular-nums;
+}
+.gh-progress-circle__caption { margin-top: .18em; font-size: .68em; color: var(--gh-fg-muted); }
+.gh-progress-circle--indeterminate .gh-progress-circle__svg {
+  animation: gh-pc-spin 1s linear infinite;
+}
+@keyframes gh-pc-spin {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(270deg); }
+}
+
+/* ============ gh-steps ============ */
+/* 外层高度大于内容时（比如放在卡片/工具条里），整块圆点+文字垂直居中 */
+.gh-steps { display: flex; flex-direction: column; justify-content: center; }
+.gh-steps__list { display: flex; margin: 0; padding: 0; list-style: none; }
+.gh-step {
+  position: relative; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-right: 12px;
+}
+.gh-step:last-child { flex: 0 1 auto; padding-right: 0; }
+.gh-step__marker {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; box-sizing: border-box;
+  border-radius: 50%; border: 2px solid var(--gh-border);
+  background: var(--gh-canvas); color: var(--gh-fg-muted);
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 0;
+}
+.gh-step__marker svg { display: block; width: 14px; height: 14px; }
+.gh-step__body { min-width: 0; padding-top: 1px; }
+.gh-step__title {
+  font-size: 13.5px; font-weight: 600; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-step__meta { margin-top: 2px; font-size: 12px; color: var(--gh-fg-muted); }
+.gh-step__desc { margin-top: 4px; font-size: 12px; color: var(--gh-fg-muted); }
+/* 连接线：两端各贴住相邻圆圈的边缘，大屏下拉长也不会出现断口 */
+.gh-step:not(:last-child)::after {
+  content: ''; position: absolute; z-index: 0;
+  left: 24px; right: 0; top: 11px; height: 2px;
+  border-radius: 1px; background: var(--gh-border);
+}
+/* 状态 */
+.gh-step[data-state="pending"] .gh-step__title { color: var(--gh-fg-muted); font-weight: 500; }
+.gh-step[data-state="done"] .gh-step__marker {
+  background: var(--gh-accent-emphasis); border-color: var(--gh-accent-emphasis); color: var(--gh-fg-on-emphasis);
+}
+.gh-step[data-state="done"]:not(:last-child)::after { background: var(--gh-accent-emphasis); }
+.gh-step[data-state="current"] .gh-step__marker {
+  border-color: var(--gh-accent); color: var(--gh-accent);
+  box-shadow: 0 0 0 3px var(--gh-accent-subtle);
+}
+.gh-step[data-state="error"] .gh-step__marker {
+  background: var(--gh-danger-emphasis); border-color: var(--gh-danger-emphasis); color: var(--gh-fg-on-emphasis);
+}
+.gh-step[data-state="error"] .gh-step__title { color: var(--gh-danger); }
+.gh-steps--clickable .gh-step { cursor: pointer; }
+.gh-steps--clickable .gh-step:hover .gh-step__title { color: var(--gh-accent); }
+.gh-steps--clickable .gh-step:focus-visible { outline: none; }
+.gh-steps--clickable .gh-step:focus-visible .gh-step__marker { box-shadow: var(--gh-focus-ring); }
+
+/* 纵向 */
+.gh-steps--vertical .gh-steps__list { flex-direction: column; }
+.gh-steps--vertical .gh-step {
+  flex: none; flex-direction: row; gap: 10px;
+  padding: 0 0 20px;
+}
+.gh-steps--vertical .gh-step:last-child { padding-bottom: 0; }
+.gh-steps--vertical .gh-step:not(:last-child)::after {
+  left: 11px; right: auto; top: 28px; bottom: 2px; width: 2px; height: auto;
+}
+.gh-steps--vertical .gh-step__body { padding-top: 2px; }
+/* 窄屏自动转纵向 */
+@media (max-width: 640px) {
+  .gh-steps:not(.gh-steps--vertical) .gh-steps__list { flex-direction: column; }
+  .gh-steps:not(.gh-steps--vertical) .gh-step {
+    flex: none; flex-direction: row; gap: 10px; padding: 0 0 20px;
+  }
+  .gh-steps:not(.gh-steps--vertical) .gh-step:last-child { padding-bottom: 0; }
+  .gh-steps:not(.gh-steps--vertical) .gh-step:not(:last-child)::after {
+    left: 11px; right: auto; top: 28px; bottom: 2px; width: 2px; height: auto;
+  }
+  .gh-steps:not(.gh-steps--vertical) .gh-step__body { padding-top: 2px; }
+}
+
+/* ============ gh-badge ============ */
+.gh-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 8px; border-radius: var(--gh-radius-pill); font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--gh-border); color: var(--gh-fg-muted);
+  background: transparent; white-space: nowrap;
+}
+.gh-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.gh-badge--open { color: var(--gh-success); border-color: rgba(63, 185, 80, .4); background: var(--gh-success-subtle); }
+.gh-badge--closed { color: var(--gh-done); border-color: rgba(163, 113, 247, .4); background: var(--gh-done-subtle); }
+.gh-badge--danger { color: var(--gh-danger); border-color: rgba(248, 81, 73, .4); background: var(--gh-danger-subtle); }
+.gh-badge--warn { color: var(--gh-warning); border-color: rgba(210, 153, 34, .4); background: var(--gh-warning-subtle); }
+.gh-badge--accent { color: var(--gh-accent); border-color: rgba(9, 105, 218, .4); background: var(--gh-accent-subtle); }
+
+/* 角落徽标：挂在头像 / 图标 / 按钮的角上 */
+.gh-badge--overlay {
+  position: absolute; z-index: 2;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  font-size: 11px; font-weight: 500; line-height: 1;
+  border: none; border-radius: var(--gh-radius-pill);
+  background: var(--gh-danger-emphasis); color: var(--gh-fg-on-emphasis);
+  box-shadow: 0 0 0 2px var(--gh-canvas);
+  white-space: nowrap;
+}
+.gh-badge--overlay.gh-badge--dot {
+  width: 10px; height: 10px; min-width: 0; padding: 0; border-radius: 50%;
+}
+.gh-badge--tr { top: 0; right: 0; transform: translate(35%, -35%); }
+.gh-badge--tl { top: 0; left: 0; transform: translate(-35%, -35%); }
+.gh-badge--br { bottom: 0; right: 0; transform: translate(35%, 35%); }
+.gh-badge--bl { bottom: 0; left: 0; transform: translate(-35%, 35%); }
+.gh-badge--hidden { display: none; }
+
+/* ============ gh-stat ============ */
+.gh-stat {
+  display: block; position: relative; overflow: hidden;
+  padding: 14px 16px; border-radius: var(--gh-radius);
+  border: 1px solid var(--gh-border); background: var(--gh-canvas-subtle);
+}
+.gh-stat__label { font-size: 12px; color: var(--gh-fg-muted); display: flex; align-items: center; gap: 6px; }
+.gh-stat__value { font-size: 26px; font-weight: 600; letter-spacing: -.6px; margin-top: 6px; line-height: 1.1; color: var(--gh-fg); }
+.gh-stat__value small { font-size: 13px; font-weight: 400; color: var(--gh-fg-muted); margin-left: 4px; }
+.gh-stat__foot { font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 6px; }
+.gh-stat--accent { border-top: 2px solid var(--gh-accent); }
+.gh-stat--ok { border-top: 2px solid var(--gh-success); }
+.gh-stat--warn { border-top: 2px solid var(--gh-warning); }
+.gh-stat--purple { border-top: 2px solid var(--gh-done); }
+
+/* ============ gh-empty ============ */
+.gh-empty { display: block; text-align: center; padding: 44px 20px; color: var(--gh-fg-muted); }
+.gh-empty__icon { opacity: .4; margin-bottom: 10px; line-height: 0; }
+.gh-empty__title { font-size: 14px; color: var(--gh-fg); font-weight: 600; margin: 0 0 4px; }
+.gh-empty__desc { margin: 0; font-size: 13px; }
+.gh-empty__title:last-child { margin-bottom: 0; }
+
+/* ============ 表单 ============ */
+.gh-field { display: block; }
+.gh-field__label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--gh-fg-muted); }
+.gh-field__hint { font-size: 11.5px; color: var(--gh-fg-muted); margin-top: 4px; }
+.gh-field__control .gh-input, .gh-field__control .gh-select, .gh-field__control .gh-textarea { width: 100%; }
+.gh-input, .gh-select, .gh-textarea { display: block; position: relative; }
+.gh-input__inner {
+  width: 100%; padding: 6px 12px; box-sizing: border-box;
+  font-size: 14px; font-family: inherit; line-height: 20px;
+  color: var(--gh-fg); background: var(--gh-canvas);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+/* 聚焦：不加外发光，而是把 1px 边框加粗成 2px 实线（1px border + 1px inset shadow），
+   和 GitHub 新版输入框一致；inset 不改变布局尺寸，圆角也跟着走。 */
+.gh-input__inner:focus { border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+.gh-input__inner:disabled { opacity: .55; cursor: not-allowed; }
+textarea.gh-input__inner { resize: vertical; min-height: 72px; }
+.gh-input__inner::placeholder { color: var(--gh-fg-muted); opacity: .8; }
+.gh-input--has-icon .gh-input__inner { padding-left: 30px; }
+
+/* ============ gh-select（自绘弹层，菜单复用 .gh-menu） ============ */
+.gh-select__trigger {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; height: var(--gh-control-lg); box-sizing: border-box;
+  padding: 0 10px 0 12px;
+  font-family: inherit; font-size: 14px; line-height: 20px;
+  color: var(--gh-fg); text-align: left;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius); cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.gh-select__trigger:focus-visible { outline: none; border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+.gh-select__trigger:disabled { background: var(--gh-canvas-subtle); color: var(--gh-fg-muted); cursor: not-allowed; }
+.gh-select__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 选项左侧头像/图标 */
+.gh-select__media { display: inline-flex; flex: none; line-height: 0; }
+.gh-select__media:empty { display: none; }
+.gh-select__media gh-avatar { box-shadow: none; }
+.gh-menu__item > gh-avatar { flex: none; box-shadow: none; }
+.gh-select__value.is-placeholder { color: var(--gh-fg-muted); }
+.gh-select__arrow {
+  flex: none; display: flex; line-height: 0; color: var(--gh-fg-muted);
+  transition: transform .15s ease;
+}
+.gh-select.is-open .gh-select__arrow { transform: rotate(180deg); }
+/* 默认 triangle-down 字形中心在 16 网格的 55.7%，不是盒中心：转 svg 本身、轴对准字形中心，
+   展开朝上时箭头不会上浮；自定义 slot 图标仍按盒中心转 wrapper */
+.gh-select.is-open .gh-select__arrow.is-triangle { transform: none; }
+.gh-select.is-open .gh-select__arrow.is-triangle svg {
+  transform: rotate(180deg); transform-origin: 50% 55.7%;
+}
+.gh-select__arrow.is-triangle svg { transition: transform .15s ease; }
+.gh-select__menu {
+  display: none; position: absolute; z-index: 1100;
+  max-height: min(320px, 60vh); overflow-y: auto;
+}
+.gh-select.is-open .gh-select__menu { display: flex; }
+.gh-select.is-flip .gh-select__menu { top: auto; bottom: calc(100% + 4px); }
+/* 增强前先把裸 option 藏掉，避免首屏闪出选项文本；增强后 option 已移入内部 select */
+gh-select > option { display: none; }
+.gh-select__native {
+  position: absolute; left: 0; bottom: 0;
+  width: 1px; height: 1px; padding: 0; border: none;
+  opacity: 0; pointer-events: none;
+}
+/* 原生下拉列表在深色主题下跟随 color-scheme，这里再兜底一次 */
+option { color: var(--gh-fg); background: var(--gh-canvas); }
+.gh-input__icon {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  color: var(--gh-fg-muted); pointer-events: none; display: flex; line-height: 0;
+}
+
+/* 输入框右侧操作区：清除 / 密码可见 / 字数计数 */
+/* 首帧兜底，避免文字压到按钮下面（JS 随后按实际宽度微调） */
+.gh-input--has-actions .gh-input__inner { padding-right: 44px; }
+.gh-input__actions {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 2px;
+}
+.gh-input__action {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border: none; border-radius: var(--gh-radius-sm);
+  background: none; color: var(--gh-fg-muted); cursor: pointer; line-height: 0;
+}
+.gh-input__action:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-input__action.is-hidden { display: none; }
+.gh-input__counter {
+  font-size: 11.5px; color: var(--gh-fg-muted);
+  font-variant-numeric: tabular-nums; padding: 0 2px;
+}
+/* 字段错误态 */
+.gh-field.is-invalid .gh-input__inner,
+.gh-field.is-invalid .gh-select__trigger { border-color: var(--gh-danger); }
+.gh-field.is-invalid .gh-input__inner:focus {
+  border-color: var(--gh-danger);
+  box-shadow: inset 0 0 0 1px var(--gh-danger);
+}
+.gh-field__error {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11.5px; color: var(--gh-danger); margin-top: 4px;
+}
+
+/* ============ 复选框 / 单选框 ============ */
+gh-checkbox, gh-radio { display: inline-flex; }
+.gh-check {
+  display: inline-flex; align-items: flex-start; gap: 8px;
+  font-size: 14px; line-height: 20px; color: var(--gh-fg);
+  cursor: pointer; user-select: none;
+}
+.gh-check__input {
+  position: absolute; width: 1px; height: 1px;
+  opacity: 0; margin: 0;
+}
+.gh-check__box {
+  position: relative; flex: none; width: 16px; height: 16px; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; border: 1px solid var(--gh-border); border-radius: var(--gh-radius-sm);
+  background: var(--gh-canvas);
+  transition: background-color .12s, border-color .12s, box-shadow .12s;
+}
+.gh-check--radio .gh-check__box { border-radius: 50%; }
+/* 单选框：居中的白色圆点 */
+.gh-check--radio .gh-check__box::after {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: #fff; transform: scale(0);
+  transition: transform .1s ease;
+}
+.gh-check__input:checked + .gh-check__box,
+.gh-check__input:indeterminate + .gh-check__box {
+  background: var(--gh-accent-emphasis); border-color: var(--gh-accent-emphasis);
+}
+.gh-check--radio .gh-check__input:checked + .gh-check__box::after { transform: scale(1); }
+/* 复选框：用图标系统的 check，flex 居中，避免 border 拼勾旋转后偏心 */
+.gh-check__mark { display: none; color: var(--gh-fg-on-emphasis); line-height: 0; }
+.gh-check__mark svg { display: block; width: 12px; height: 12px; }
+.gh-check__dash { display: none; width: 8px; height: 2px; border-radius: 1px; background: #fff; }
+.gh-check__input:checked + .gh-check__box .gh-check__mark { display: flex; }
+.gh-check__input:indeterminate + .gh-check__box .gh-check__mark { display: none; }
+.gh-check__input:indeterminate + .gh-check__box .gh-check__dash { display: block; }
+.gh-check__input:focus-visible + .gh-check__box { box-shadow: var(--gh-focus-ring); }
+.gh-check__input:disabled + .gh-check__box { opacity: .5; }
+gh-checkbox.is-disabled .gh-check,
+gh-radio.is-disabled .gh-check { cursor: not-allowed; }
+gh-checkbox.is-disabled .gh-check__label,
+gh-radio.is-disabled .gh-check__label { color: var(--gh-fg-muted); }
+.gh-check__label { min-width: 0; }
+
+/* ============ 应用骨架 ============ */
+.gh-app { display: grid; grid-template-columns: 264px minmax(0, 1fr); min-height: 100vh; }
+.gh-app__main { min-width: 0; display: flex; flex-direction: column; }
+.gh-side {
+  position: sticky; top: 0; height: 100%; max-height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--gh-canvas-subtle);
+  border-right: 1px solid var(--gh-border); overflow-y: auto;
+}
+
+/* gh-grid 的列数/跨列走 CSS 变量，便于响应式覆盖 */
+gh-grid { display: grid; grid-template-columns: repeat(var(--gh-cols, 3), minmax(0, 1fr)); gap: var(--gh-gap, 16px); }
+gh-grid > * { grid-column: span var(--gh-span, 1); }
+.gh-side__head { padding: 10px 8px 12px; }
+.gh-side__head:empty { display: none; }
+.gh-side__nav { padding: 6px 8px 8px; display: flex; flex-direction: column; }
+.gh-side__foot { margin-top: auto; padding: 10px; border-top: 1px solid var(--gh-border); }
+.gh-side__foot:empty { display: none; }
+
+/* 账号条：头像 + 名称/说明 + 切换账号 */
+.gh-account {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 6px 6px 8px; box-sizing: border-box;
+  border-radius: var(--gh-radius); cursor: pointer;
+  transition: background-color .12s ease;
+}
+.gh-account:hover { background: var(--gh-canvas-hover); }
+.gh-account:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-account__avatar { flex: none; }
+.gh-account__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gh-account__name {
+  font-size: 14px; font-weight: 600; line-height: 18px; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-account__subtitle {
+  font-size: 12px; line-height: 16px; color: var(--gh-fg-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-account__subtitle[hidden] { display: none; }
+.gh-account__switch {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--gh-control-sm); height: var(--gh-control-sm); padding: 0;
+  border: 0; border-radius: var(--gh-radius);
+  background: transparent; color: var(--gh-fg-muted); cursor: pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+.gh-account__switch:hover {
+  color: var(--gh-fg);
+  background: color-mix(in srgb, var(--gh-fg) 8%, transparent);
+}
+.gh-account__switch:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-account__switch[hidden] { display: none; }
+
+.gh-nav-title {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 8px 4px 20px;
+  font-size: 12px; font-weight: 500; color: var(--gh-fg-muted);
+}
+.gh-nav-title__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-nav-title__action {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border: 0; border-radius: var(--gh-radius);
+  background: transparent; color: var(--gh-fg-muted); cursor: pointer;
+}
+.gh-nav-title__action:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-nav-title__action:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+/* 条目整体右移 12px：左侧那 12px 留给选中态的蓝色指示条（条的几何由行状态统一块提供） */
+.gh-nav-item {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  width: calc(100% - 12px); margin-left: 12px;
+  padding: 8px; box-sizing: border-box;
+  border: none; border-radius: var(--gh-radius); background: none;
+  color: var(--gh-fg); font-family: inherit; font-size: 14px; line-height: 20px;
+  text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color .12s ease;
+}
+.gh-nav-item:hover { background: var(--gh-canvas-hover); text-decoration: none; }
+/* 条目之间的节奏由 item 自己带，放到任何容器里（侧栏、抽屉、普通 div）都成立 */
+gh-nav-item + gh-nav-item { margin-top: 4px; }
+gh-account + gh-nav-item { margin-top: 8px; }
+.gh-nav-item__label {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-nav-item__media { display: inline-flex; align-items: center; flex: none; line-height: 0; }
+.gh-nav-item__media gh-avatar { box-shadow: none; }
+.gh-nav-item gh-icon { color: var(--gh-fg-muted); flex: none; }
+.gh-nav-item.is-active gh-icon { color: var(--gh-fg); }
+.gh-nav-count {
+  margin-left: auto; font-size: 11px; color: var(--gh-fg-muted);
+  background: var(--gh-canvas); border: 1px solid var(--gh-border-muted);
+  padding: 0 6px; border-radius: var(--gh-radius-pill); line-height: 16px;
+}
+.gh-topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 26px; border-bottom: 1px solid var(--gh-border-muted);
+  background: var(--gh-canvas); position: sticky; top: 0; z-index: 30;
+}
+.gh-crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gh-fg-muted); min-width: 0; }
+.gh-crumbs > :not(:first-child)::before { content: "/"; margin-right: 6px; opacity: .6; }
+.gh-crumbs a { color: var(--gh-fg-muted); text-decoration: none; }
+.gh-crumbs a:hover { color: var(--gh-accent); text-decoration: underline; }
+.gh-page-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.gh-page-head__title { font-size: 20px; font-weight: 600; margin: 0 0 4px; letter-spacing: -.2px; color: var(--gh-fg); }
+.gh-page-head__desc { margin: 0; color: var(--gh-fg-muted); font-size: 13px; }
+.gh-page-head__actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============ gh-md / gh-time ============ */
+.gh-md { display: block; font-size: 14px; line-height: 1.6; color: var(--gh-fg); }
+.gh-md > :last-child { margin-bottom: 0; }
+.gh-md p { margin: 0 0 10px; }
+.gh-md :is(h1, h2, h3, h4, h5, h6) {
+  margin: 16px 0 8px; color: var(--gh-fg); font-weight: 600; line-height: 1.25;
+}
+.gh-md h1 { font-size: 1.875em; }
+.gh-md h2 { font-size: 1.5em; }
+.gh-md h3 { font-size: 1.25em; }
+.gh-md h4 { font-size: 1em; }
+.gh-md h5 { font-size: .875em; }
+.gh-md h6 { font-size: .85em; color: var(--gh-fg-muted); }
+.gh-md > :is(h1, h2, h3, h4, h5, h6):first-child { margin-top: 0; }
+.gh-md ul, .gh-md ol { margin: 0 0 10px; padding-left: 22px; }
+.gh-md blockquote {
+  margin: 0 0 10px; padding: 0 12px;
+  border-left: 3px solid var(--gh-border); color: var(--gh-fg);
+}
+.gh-md li.gh-md-task { list-style: none; margin-left: -18px; }
+.gh-md li.gh-md-task input[type="checkbox"] {
+  margin: 0 6px 0 0; vertical-align: -1px;
+  accent-color: var(--gh-accent-emphasis); cursor: default;
+}
+.gh-md a { color: var(--gh-accent); text-decoration: none; }
+.gh-md a:hover { text-decoration: underline; }
+.gh-md pre {
+  background: var(--gh-canvas-subtle); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius); padding: 12px; overflow: auto;
+  font-family: var(--gh-mono); font-size: 13px; margin: 0 0 10px;
+}
+.gh-md pre code { background: none; padding: 0; }
+.gh-md code {
+  font-family: var(--gh-mono); font-size: .92em;
+  background: var(--gh-canvas-subtle); border-radius: var(--gh-radius-sm); padding: 1px 4px;
+}
+.gh-dim { color: var(--gh-fg-muted); }
+
+/* ============ gh-file-picker ============ */
+gh-file-picker { display: block; }
+gh-file-picker:not(:defined) { display: none; }
+.gh-file-picker__input { display: none; }
+
+/* 拖拽区 */
+.gh-file-picker__zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 16px; box-sizing: border-box;
+  text-align: center; cursor: pointer;
+  border: 1px dashed var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas-subtle);
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.gh-file-picker__zone:hover { background: var(--gh-canvas-hover); border-color: var(--gh-fg-muted); }
+.gh-file-picker__zone:focus-visible {
+  outline: none; border-color: var(--gh-accent); border-style: solid;
+  box-shadow: var(--gh-focus-ring);
+}
+.gh-file-picker__icon {
+  display: inline-flex; line-height: 0; color: var(--gh-fg-muted);
+  margin-bottom: 8px; transition: color .15s;
+}
+.gh-file-picker__text { display: flex; flex-direction: column; align-items: center; min-width: 0; max-width: 100%; }
+.gh-file-picker__title { font-size: 14px; line-height: 20px; color: var(--gh-fg); }
+.gh-file-picker__browse { color: var(--gh-accent); margin-left: 4px; }
+.gh-file-picker__zone:hover .gh-file-picker__browse { text-decoration: underline; }
+.gh-file-picker__hint {
+  margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.gh-file-picker__hint:empty { display: none; }
+
+/* 拖拽悬停 / 禁用 */
+.gh-file-picker.is-dragging .gh-file-picker__zone {
+  border-style: solid; border-color: var(--gh-accent);
+  background: var(--gh-accent-subtle);
+}
+.gh-file-picker.is-dragging .gh-file-picker__icon { color: var(--gh-accent); }
+.gh-file-picker.is-dragging .gh-file-picker__browse { text-decoration: underline; }
+.gh-file-picker.is-disabled .gh-file-picker__zone {
+  cursor: not-allowed; opacity: .6;
+  background: var(--gh-canvas-subtle); border-color: var(--gh-border);
+}
+.gh-file-picker.is-disabled .gh-file-picker__browse { color: inherit; }
+
+/* 校验错误 */
+.gh-file-picker__errors { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.gh-file-picker__errors:empty { display: none; }
+.gh-file-picker__error {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 12px; line-height: 18px; color: var(--gh-danger);
+}
+.gh-file-picker__error-icon { display: inline-flex; line-height: 0; margin-top: 2px; flex: none; }
+
+/* 文件列表 */
+.gh-file-picker__list {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 10px 0 0; padding: 0; list-style: none;
+}
+.gh-file-picker__list:empty { display: none; margin: 0; }
+.gh-file-picker__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; box-sizing: border-box;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas);
+}
+.gh-file-picker__item[data-state="error"] {
+  border-color: color-mix(in srgb, var(--gh-danger) 45%, var(--gh-border));
+}
+.gh-file-picker__thumb {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 36px; height: 36px; box-sizing: border-box;
+  border: 1px solid var(--gh-border-muted); border-radius: var(--gh-radius);
+  background: var(--gh-canvas-subtle); overflow: hidden; line-height: 0;
+}
+.gh-file-picker__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gh-file-picker__info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gh-file-picker__name {
+  font-size: 13px; line-height: 18px; font-weight: 500; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-file-picker__meta {
+  display: flex; align-items: center; gap: 4px; min-width: 0;
+  font-size: 12px; line-height: 16px; color: var(--gh-fg-muted);
+}
+.gh-file-picker__meta-icon { display: inline-flex; line-height: 0; flex: none; }
+.gh-file-picker__meta-icon:empty { display: none; }
+.gh-file-picker__meta-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-file-picker__item[data-state="done"] .gh-file-picker__meta { color: var(--gh-success); }
+.gh-file-picker__item[data-state="error"] .gh-file-picker__meta { color: var(--gh-danger); }
+
+/* 上传进度 */
+.gh-file-picker__bar {
+  height: 4px; margin-top: 5px; border-radius: var(--gh-radius-pill);
+  background: var(--gh-border-muted); overflow: hidden;
+}
+.gh-file-picker__bar > span {
+  display: block; width: 0; height: 100%; border-radius: inherit;
+  background: var(--gh-accent-emphasis); transition: width .2s ease;
+}
+.gh-file-picker__item[data-state="ready"] .gh-file-picker__bar,
+.gh-file-picker__item[data-state="done"] .gh-file-picker__bar,
+.gh-file-picker__item[data-state="error"] .gh-file-picker__bar { display: none; }
+
+/* 行内操作 */
+.gh-file-picker__actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.gh-file-picker__action,
+.gh-file-picker__retry {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--gh-control-sm); padding: 0; border: 0; border-radius: var(--gh-radius);
+  background: transparent; color: var(--gh-fg-muted);
+  font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.gh-file-picker__action { width: 28px; }
+.gh-file-picker__action:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-file-picker__retry { padding: 0 8px; font-weight: 500; color: var(--gh-accent); }
+.gh-file-picker__retry:hover { background: var(--gh-accent-subtle); }
+.gh-file-picker__retry[hidden] { display: none; }
+.gh-file-picker__action:focus-visible,
+.gh-file-picker__retry:focus-visible {
+  outline: none; box-shadow: var(--gh-focus-ring);
+}
+
+/* 页脚 */
+.gh-file-picker__footer {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+}
+.gh-file-picker__footer[hidden] { display: none; }
+.gh-file-picker__count { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-file-picker__clear {
+  flex: none; margin-left: auto; padding: 0; border: 0; background: none;
+  font-family: inherit; font-size: 12px; color: var(--gh-fg-muted); cursor: pointer;
+}
+.gh-file-picker__clear:hover { color: var(--gh-danger); text-decoration: underline; }
+.gh-file-picker__clear:focus-visible { outline: none; border-radius: var(--gh-radius-sm); box-shadow: var(--gh-focus-ring); }
+
+/* 变体：内联按钮式（放进表单/工具栏） */
+.gh-file-picker--button .gh-file-picker__zone {
+  display: inline-flex; flex-direction: row; align-items: center; justify-content: flex-start;
+  gap: 8px; width: auto; max-width: 100%; padding: 5px 12px; text-align: left;
+  border-style: solid;
+}
+.gh-file-picker--button .gh-file-picker__icon { margin: 0; }
+.gh-file-picker--button .gh-file-picker__icon svg { width: 16px; height: 16px; }
+.gh-file-picker--button .gh-file-picker__text { flex-direction: row; align-items: center; gap: 8px; }
+.gh-file-picker--button .gh-file-picker__drag { display: none; }
+.gh-file-picker--button .gh-file-picker__title { font-size: 14px; font-weight: 500; white-space: nowrap; }
+.gh-file-picker--button .gh-file-picker__browse { margin: 0; color: inherit; }
+.gh-file-picker--button .gh-file-picker__hint { margin: 0; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-file-picker__zone, .gh-file-picker__icon, .gh-file-picker__bar > span { transition: none; }
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 768px) {
+  .gh-app { grid-template-columns: 1fr; min-height: 0; }
+  .gh-side {
+    position: static; height: auto; max-height: none;
+    border-right: none; border-bottom: 1px solid var(--gh-border);
+  }
+  .gh-topbar { padding: 10px 16px; }
+  .gh-page-head__actions { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  gh-grid { grid-template-columns: 1fr; }
+  gh-grid > * { grid-column: auto; }
+}
+
+/* ============ 动效偏好 ============ */
+@media (prefers-reduced-motion: reduce) {
+  .gh-menu, .gh-dialog, .gh-toast { animation: none; }
+  .gh-progress__fill, .gh-progress-circle__fill, .gh-select__arrow, .gh-btn,
+  .gh-input__inner, .gh-select__trigger { transition: none; }
+  gh-tag-input { transition: none; }
+  .gh-skeleton__bar::after { animation: none; }
+  .gh-progress--indeterminate .gh-progress__fill,
+  .gh-progress--striped .gh-progress__fill,
+  .gh-progress-circle--indeterminate .gh-progress-circle__svg { animation: none; }
+  /* tab 指示条 / 分段滑块：直接跳到位置，不做滑动 */
+  .gh-tabs__list.is-ready .gh-tabs__indicator,
+  .gh-segmented.is-ready .gh-segmented__thumb,
+  .gh-tab, .gh-segment { transition: none; }
+}
+
+
+/* ============ gh-table ============ */
+.gh-table {
+  display: block; overflow: hidden;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas);
+}
+.gh-table__scroll { overflow-x: auto; }
+.gh-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.gh-table th {
+  position: sticky; top: 0; z-index: 1;
+  padding: 8px 12px; text-align: left; white-space: nowrap;
+  font-size: 12px; font-weight: 600; color: var(--gh-fg-muted);
+  background: var(--gh-canvas-subtle);
+  border-bottom: 1px solid var(--gh-border);
+}
+.gh-table td {
+  padding: 8px 12px; color: var(--gh-fg);
+  border-bottom: 1px solid var(--gh-border-muted);
+}
+.gh-table tbody tr:last-child td { border-bottom: none; }
+.gh-table tbody tr:hover td { background: var(--gh-canvas-subtle); }
+.gh-table--dense th, .gh-table--dense td { padding: 5px 10px; }
+.gh-table__empty { padding: 28px 12px; text-align: center; color: var(--gh-fg-muted); }
+
+/* ============ gh-list ============ */
+.gh-list {
+  display: block; overflow: hidden;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas);
+}
+.gh-list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; cursor: pointer;
+  border-bottom: 1px solid var(--gh-border-muted);
+}
+.gh-list-item:last-child { border-bottom: none; }
+.gh-list-item:hover { background: var(--gh-canvas-subtle); }
+.gh-list-item.is-selected { background: var(--gh-row-bg-selected); }
+.gh-list-item__icon { color: var(--gh-fg-muted); flex: none; }
+.gh-list-item__body { flex: 1; min-width: 0; }
+.gh-list-item__title {
+  font-size: 14px; font-weight: 500; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-list-item__meta { font-size: 12px; color: var(--gh-fg-muted); margin-top: 2px; }
+.gh-list-item__trailing { flex: none; display: flex; align-items: center; gap: 8px; }
+
+/* ============ gh-avatar-stack / gh-kbd ============ */
+.gh-avatar-stack { display: inline-flex; align-items: center; }
+.gh-avatar-stack gh-avatar {
+  margin-left: -8px; border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--gh-canvas);
+}
+.gh-avatar-stack gh-avatar:first-child { margin-left: 0; }
+.gh-avatar-stack__more {
+  margin-left: -8px; width: 26px; height: 26px; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--gh-canvas-hover);
+  border: 1px solid var(--gh-border); color: var(--gh-fg-muted);
+  font-size: 11px; box-shadow: 0 0 0 2px var(--gh-canvas);
+}
+.gh-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 20px; padding: 0 5px; box-sizing: border-box;
+  font-family: var(--gh-mono); font-size: 11px; color: var(--gh-fg-muted);
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border); border-bottom-width: 2px; border-radius: var(--gh-radius-sm);
+}
+
+/* ============ gh-switch ============ */
+/* 几何用宿主上的变量描述（轨道宽高 / 滑块直径 / 滑块内缩 / 标记尺寸），
+   尺寸与形态变体只改变量，组件结构不变 */
+gh-switch {
+  display: inline-flex;
+  --gh-switch-w: 38px;
+  --gh-switch-h: 22px;
+  --gh-switch-knob: 18px;
+  --gh-switch-gap: 2px;
+  --gh-switch-marker: 8px;
+}
+/* 尺寸：sm / lg 覆盖整套几何（md 就是默认值） */
+gh-switch.gh-switch--sm {
+  --gh-switch-w: 32px;
+  --gh-switch-h: 18px;
+  --gh-switch-knob: 14px;
+  --gh-switch-marker: 7px;
+}
+gh-switch.gh-switch--lg {
+  --gh-switch-w: 46px;
+  --gh-switch-h: 26px;
+  --gh-switch-knob: 22px;
+  --gh-switch-gap: 2px;
+  --gh-switch-marker: 10px;
+}
+/* inline：文案内嵌进轨道，需要更长的轨道；icon：滑块里画 ✓ / × */
+gh-switch.gh-switch--inline { --gh-switch-w: 56px; }
+gh-switch.gh-switch--inline.gh-switch--icon { --gh-switch-w: 56px; }
+gh-switch.gh-switch--sm.gh-switch--inline { --gh-switch-w: 46px; }
+gh-switch.gh-switch--lg.gh-switch--inline { --gh-switch-w: 66px; }
+gh-switch.gh-switch--sm.gh-switch--inline.gh-switch--icon { --gh-switch-w: 46px; }
+gh-switch.gh-switch--lg.gh-switch--inline.gh-switch--icon { --gh-switch-w: 66px; }
+/* square：滑块是「近方形」的圆角块（比轨道高度略矮、比高度略宽），
+   轨道从胶囊变成大圆角矩形，对侧留状态标记 —— 按参考图的比例取值 */
+gh-switch.gh-switch--square {
+  --gh-switch-w: 36px;
+  --gh-switch-h: 18px;
+  --gh-switch-knob-w: 16.5px;
+  --gh-switch-knob: 14.5px;
+  --gh-switch-knob-radius: 2.5px;
+  --gh-switch-radius: 4px;
+  --gh-switch-marker: 7px;
+  --gh-switch-ring: 1px;
+  --gh-switch-bar-w: 1px;
+  --gh-switch-bar-h: 6.5px;
+}
+gh-switch.gh-switch--sm.gh-switch--square {
+  --gh-switch-w: 32px;
+  --gh-switch-h: 16px;
+  --gh-switch-knob-w: 14.5px;
+  --gh-switch-knob: 12.5px;
+  --gh-switch-knob-radius: 2px;
+  --gh-switch-radius: 4px;
+  --gh-switch-marker: 6px;
+  --gh-switch-bar-h: 6px;
+}
+gh-switch.gh-switch--lg.gh-switch--square {
+  --gh-switch-w: 44px;
+  --gh-switch-h: 22px;
+  --gh-switch-knob-w: 20.5px;
+  --gh-switch-knob: 17.5px;
+  --gh-switch-knob-radius: 3px;
+  --gh-switch-radius: 5px;
+  --gh-switch-marker: 9px;
+  --gh-switch-ring: 1.5px;
+  --gh-switch-bar-w: 1.5px;
+  --gh-switch-bar-h: 8px;
+}
+/* 方形 + 内嵌文案：轨道再长一点，放得下 On / Off */
+gh-switch.gh-switch--square.gh-switch--inline { --gh-switch-w: 50px; }
+gh-switch.gh-switch--sm.gh-switch--square.gh-switch--inline { --gh-switch-w: 44px; }
+gh-switch.gh-switch--lg.gh-switch--square.gh-switch--inline { --gh-switch-w: 62px; }
+.gh-switch__row {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; font-size: 14px; color: var(--gh-fg); user-select: none;
+}
+/* 第二形态：status 文案放在轨道左侧（On / Off），随开关状态切换 */
+.gh-switch__status { font-size: 14px; color: var(--gh-fg); }
+gh-switch.gh-switch--sm .gh-switch__status { font-size: 12px; }
+gh-switch.gh-switch--lg .gh-switch__status { font-size: 15px; }
+.gh-switch__status:empty { display: none; }
+.gh-switch__input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; appearance: none; }
+.gh-switch__track {
+  position: relative; flex: none; width: var(--gh-switch-w); height: var(--gh-switch-h); box-sizing: border-box;
+  border-radius: var(--gh-switch-radius, var(--gh-radius-pill));
+  background: var(--gh-canvas-hover); border: 1px solid var(--gh-border);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, .07);
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+/* 内嵌文案（inline）：关时靠右、开时靠左，滑块会盖住另一侧 */
+.gh-switch__track-text {
+  position: absolute; inset: 1px; display: none; align-items: center; justify-content: flex-end;
+  padding: 0 6px; font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .01em;
+  color: var(--gh-fg-muted); pointer-events: none; transition: color .15s ease;
+}
+gh-switch.gh-switch--inline .gh-switch__track-text { display: flex; }
+gh-switch.gh-switch--sm.gh-switch--inline .gh-switch__track-text { padding: 0 5px; font-size: 10px; }
+gh-switch.gh-switch--lg.gh-switch--inline .gh-switch__track-text { padding: 0 8px; font-size: 12px; }
+.gh-switch__input:checked ~ .gh-switch__track .gh-switch__track-text {
+  justify-content: flex-start; color: #fff;
+}
+.gh-switch__knob {
+  position: absolute; left: var(--gh-switch-gap); top: calc((var(--gh-switch-h) - 2px - var(--gh-switch-knob)) / 2);
+  display: flex; align-items: center; justify-content: center;
+  width: var(--gh-switch-knob-w, var(--gh-switch-knob)); height: var(--gh-switch-knob);
+  border-radius: var(--gh-switch-knob-radius, 50%); background: #fff;
+  box-shadow: 0 1px 2px rgba(31, 35, 40, .28), 0 0 0 .5px rgba(31, 35, 40, .06);
+  transition: transform .2s cubic-bezier(.3, .7, .4, 1), width .15s ease, border-radius .15s ease, box-shadow .15s ease;
+}
+/* 方形滑块：白色圆角块 + 对侧状态标记（关=空心圈，开=白色竖条），方与圆的对照 */
+.gh-switch--square .gh-switch__track::before,
+.gh-switch--square .gh-switch__track::after {
+  content: ''; position: absolute; top: 50%; margin-top: calc(var(--gh-switch-marker) / -2); pointer-events: none;
+  transition: opacity .12s ease;
+}
+/* 关：右侧空心圈 —— 落在「滑块之外那半条轨道」的正中 */
+.gh-switch--square .gh-switch__track::after {
+  right: calc((var(--gh-switch-w) - 2px - var(--gh-switch-gap) - var(--gh-switch-knob-w, var(--gh-switch-knob)) - var(--gh-switch-marker)) / 2);
+  width: var(--gh-switch-marker); height: var(--gh-switch-marker); box-sizing: border-box;
+  border: var(--gh-switch-ring, 1.5px) solid var(--gh-fg-muted); border-radius: 50%; opacity: 1;
+}
+.gh-switch--square .gh-switch__input:checked ~ .gh-switch__track::after { opacity: 0; }
+/* 开：左侧白色竖条 —— 同样居中 */
+.gh-switch--square .gh-switch__track::before {
+  left: calc((var(--gh-switch-w) - 2px - var(--gh-switch-gap) - var(--gh-switch-knob-w, var(--gh-switch-knob)) - var(--gh-switch-bar-w, 2px)) / 2);
+  width: var(--gh-switch-bar-w, 2px); height: var(--gh-switch-bar-h, var(--gh-switch-marker)); border-radius: 1px; background: #fff; opacity: 0;
+}
+.gh-switch--square .gh-switch__input:checked ~ .gh-switch__track::before { opacity: 1; }
+/* inline 文案会把对侧空间占掉，不再画标记 */
+.gh-switch--square.gh-switch--inline .gh-switch__track::before,
+.gh-switch--square.gh-switch--inline .gh-switch__track::after { content: none; }
+.gh-switch__knob-icon { display: none; line-height: 0; color: var(--gh-fg); }
+gh-switch.gh-switch--icon .gh-switch__knob-icon { display: flex; }
+gh-switch.gh-switch--icon .gh-switch__knob-icon svg { display: block; width: 11px; height: 11px; }
+gh-switch.gh-switch--sm.gh-switch--icon .gh-switch__knob-icon svg { width: 10px; height: 10px; }
+gh-switch.gh-switch--lg.gh-switch--icon .gh-switch__knob-icon svg { width: 13px; height: 13px; }
+.gh-switch__input:checked ~ .gh-switch__track .gh-switch__knob-icon { color: var(--gh-accent-emphasis); }
+/* 用 ~ 而不是 +：status 文案插在 input 与轨道之间时仍能命中 */
+.gh-switch__input:checked ~ .gh-switch__track {
+  background: var(--gh-accent-emphasis); border-color: var(--gh-accent-emphasis);
+}
+/* 交互态：悬停时轨道凹影加深、滑块投影抬高；按下时滑块横向拉伸（iOS 式） */
+gh-switch:hover .gh-switch__track { box-shadow: inset 0 1px 3px rgba(31, 35, 40, .12); }
+gh-switch:hover .gh-switch__knob { box-shadow: 0 2px 5px rgba(31, 35, 40, .3), 0 0 0 .5px rgba(31, 35, 40, .05); }
+gh-switch:hover .gh-switch__input:checked ~ .gh-switch__track {
+  background: color-mix(in srgb, var(--gh-accent-emphasis) 90%, #000);
+  border-color: transparent;
+}
+gh-switch.is-disabled:hover .gh-switch__track { box-shadow: inset 0 1px 2px rgba(31, 35, 40, .07); }
+gh-switch.is-disabled:hover .gh-switch__knob { box-shadow: 0 1px 2px rgba(31, 35, 40, .28), 0 0 0 .5px rgba(31, 35, 40, .06); }
+.gh-switch__row:active .gh-switch__track .gh-switch__knob { width: calc(var(--gh-switch-knob-w, var(--gh-switch-knob)) + 3px); }
+/* 滑块行程 = 轨道宽 − 滑块直径 − 两侧边框与内缩（38/18、32/14、46/22 都对得上） */
+.gh-switch__input:checked ~ .gh-switch__track .gh-switch__knob {
+  transform: translateX(calc(var(--gh-switch-w) - var(--gh-switch-knob-w, var(--gh-switch-knob)) - var(--gh-switch-gap) * 2 - 2px));
+}
+/* 按下且处于开态：滑块向左多让出拉伸的 3px，避免右侧越出轨道 */
+.gh-switch__row:active .gh-switch__input:checked ~ .gh-switch__track .gh-switch__knob {
+  transform: translateX(calc(var(--gh-switch-w) - var(--gh-switch-knob-w, var(--gh-switch-knob)) - 3px - var(--gh-switch-gap) * 2 - 2px));
+}
+.gh-switch__input:focus-visible ~ .gh-switch__track { box-shadow: var(--gh-focus-ring); }
+.gh-switch__input:disabled ~ .gh-switch__track { opacity: .5; }
+gh-switch.is-disabled .gh-switch__row { cursor: not-allowed; }
+gh-switch.is-disabled .gh-switch__label { color: var(--gh-fg-muted); }
+
+/* ============ gh-combobox ============ */
+.gh-combobox { display: block; position: relative; }
+.gh-combobox__input { padding-right: 32px; }
+.gh-combobox__arrow {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--gh-fg-muted); pointer-events: none; display: flex; line-height: 0;
+  transition: transform .15s ease;
+}
+.gh-combobox__arrow svg { width: 16px; height: 16px; }
+.gh-combobox.is-open .gh-combobox__arrow { transform: translateY(-50%) rotate(180deg); }
+/* 默认三角同上：只转 svg，轴对准字形中心；右侧定位的 translateY(-50%) 不受影响 */
+.gh-combobox.is-open .gh-combobox__arrow.is-triangle { transform: translateY(-50%); }
+.gh-combobox.is-open .gh-combobox__arrow.is-triangle svg {
+  transform: rotate(180deg); transform-origin: 50% 55.7%;
+}
+.gh-combobox__arrow.is-triangle svg { transition: transform .15s ease; }
+.gh-combobox__menu {
+  display: none; position: absolute; z-index: 1100;
+  max-height: 240px; overflow-y: auto;
+}
+.gh-combobox.is-open .gh-combobox__menu { display: flex; }
+
+/* ============ gh-autocomplete（输入补全） ============ */
+.gh-autocomplete { display: block; width: 100%; }
+/* 「Filter」标签和输入框同框：整体是 gh-input 的样子，聚焦时整框变 2px 实线 */
+.gh-autocomplete__field {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 32px; box-sizing: border-box; padding: 0 8px;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius);
+  transition: border-color .15s, box-shadow .15s;
+}
+.gh-autocomplete__field:focus-within {
+  border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent);
+}
+.gh-autocomplete__label { flex: none; font-size: 14px; line-height: 20px; color: var(--gh-fg-muted); }
+.gh-autocomplete__field .gh-autocomplete__input {
+  flex: 1 1 auto; min-width: 0; width: auto;
+  height: 30px; padding: 0; border: 0; border-radius: 0;
+  background: none; box-shadow: none; outline: none;
+  font-size: 14px; line-height: 20px; color: var(--gh-fg);
+}
+.gh-autocomplete__field .gh-autocomplete__input:focus { box-shadow: none; }
+.gh-autocomplete.is-disabled .gh-autocomplete__field { opacity: .55; cursor: not-allowed; }
+
+/* 补全面板：挂在 body 上按坐标定位，宽度至少与输入框一致。
+   留白与 gh-menu / gh-option-list 一致（8px），选中行的胶囊才不会贴边。 */
+.gh-autocomplete__menu {
+  position: fixed; z-index: 1180; display: none;
+  width: max-content; min-width: 180px; max-width: min(360px, calc(100vw - 24px));
+  padding: var(--gh-menu-pad, 8px) var(--gh-menu-pad-x, 12px); box-sizing: border-box;
+  max-height: 320px; overflow-y: auto; overflow-x: hidden;
+}
+.gh-autocomplete__menu.is-open { display: flex; }
+.gh-autocomplete__item { height: 32px; padding: 0 8px; }
+.gh-autocomplete__item[aria-selected="true"] { background: var(--gh-selected-bg); }
+.gh-autocomplete__icon {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; line-height: 0; color: var(--gh-fg-muted);
+}
+.gh-autocomplete__icon > svg { display: block; }
+.gh-autocomplete__label {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-autocomplete__match { font-weight: 600; color: var(--gh-fg); }
+.gh-autocomplete__empty { padding: 8px; font-size: 13px; color: var(--gh-fg-muted); }
+
+/* ============ gh-tooltip / gh-popover ============ */
+.gh-tooltip {
+  position: fixed; z-index: 1200; max-width: 260px;
+  padding: 4px 8px; border-radius: var(--gh-radius);
+  background: var(--gh-fg); color: var(--gh-canvas);
+  font-size: 12px; line-height: 16px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .12s ease;
+}
+.gh-tooltip.is-visible { opacity: 1; }
+.gh-popover {
+  position: fixed; z-index: 1150; display: none;
+  min-width: 200px;
+  width: var(--gh-popover-width, auto);
+  max-width: min(var(--gh-popover-width, 320px), calc(100vw - 24px));
+  padding: 12px; box-sizing: border-box;
+  --gh-tabs-flush-pad: 12px;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius-lg); box-shadow: var(--gh-shadow);
+  animation: gh-menu-in .12s ease;
+}
+.gh-popover.is-open { display: block; }
+.gh-popover--flush { padding: 0; --gh-tabs-flush-pad: 0px; }
+
+/* 带标题 / 搜索 / 勾选列表 / 底栏的弹层（GitHub 的 Lists 那种）。
+   四段固定：header → search → body → footer，内边距交给各段自己管。 */
+.gh-popover--framed { padding: 0; }
+.gh-popover__header { padding: 12px 16px 0; }
+.gh-popover__title { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--gh-fg); }
+.gh-popover__desc { margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--gh-fg-muted); }
+.gh-popover__title[hidden],
+.gh-popover__desc[hidden],
+.gh-popover__header[hidden] { display: none; }
+.gh-popover__search {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 16px 0; padding: 0 8px; min-height: 32px; box-sizing: border-box;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  transition: border-color .12s, box-shadow .12s;
+}
+.gh-popover__search[hidden] { display: none; }
+.gh-popover__search:focus-within { border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+.gh-popover__search-icon { flex: none; display: inline-flex; color: var(--gh-fg-muted); line-height: 0; }
+.gh-popover__search-icon svg { display: block; width: 16px; height: 16px; }
+.gh-popover__search-input {
+  flex: 1 1 auto; min-width: 0; width: 100%; padding: 0; border: 0; outline: none;
+  background: transparent; font: inherit; font-size: 14px; line-height: 20px; color: var(--gh-fg);
+}
+.gh-popover__search-input::placeholder { color: var(--gh-fg-muted); opacity: .8; }
+.gh-popover__body { padding: 8px 12px; }
+.gh-popover__body:first-child { padding-top: 12px; }
+.gh-popover--framed .gh-popover__body { max-height: 320px; overflow-y: auto; overflow-x: hidden; }
+.gh-popover__empty { padding: 8px; font-size: 13px; color: var(--gh-fg-muted); text-align: center; }
+.gh-popover__empty[hidden] { display: none; }
+.gh-popover__footer {
+  display: flex; gap: 8px; margin-top: 4px; padding: 12px 16px;
+  border-top: 1px solid var(--gh-border);
+}
+.gh-popover__footer[hidden] { display: none; }
+.gh-popover__footer .gh-btn { flex: 1 1 auto; justify-content: center; }
+
+/* 弹层里的可勾选行 */
+gh-popover-item { display: block; }
+gh-popover-item[hidden] { display: none; }
+.gh-popover__item {
+  position: relative; display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 8px; border-radius: var(--gh-radius);
+  cursor: pointer; user-select: none;
+}
+.gh-popover__item[hidden] { display: none; }
+.gh-popover__item:hover { background: var(--gh-canvas-hover); }
+/* 当前项 / 悬停的灰底由上方「行状态」块提供；但勾选列表不画蓝色强调条 ——
+   选中与否用复选框表达，即使被 GHUI.current() 标成当前行也不出条。 */
+.gh-popover__item::before,
+.gh-popover__item.gh-row::before { content: none; }
+.gh-popover__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gh-popover__item-title { font-size: 14px; line-height: 20px; color: var(--gh-fg); overflow-wrap: anywhere; }
+.gh-popover__item-hint { font-size: 12px; line-height: 18px; color: var(--gh-fg-muted); }
+.gh-popover__item-hint[hidden] { display: none; }
+.gh-popover__item.is-disabled { cursor: not-allowed; opacity: .6; }
+
+/* ============ gh-layer ============ */
+/* 通用自定义浮层：内容完全自定义。贴元素弹出 → 下拉/选择/账户切换；按坐标弹出 → 右键菜单。
+   用法见 <gh-layer> 与 GHUI.layer() 的注释。 */
+.gh-layer {
+  position: fixed; z-index: 1180; display: none; box-sizing: border-box;
+  min-width: 160px; max-width: min(340px, calc(100vw - 16px));
+  padding: 8px; overflow-y: auto;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius-lg); box-shadow: var(--gh-shadow);
+}
+.gh-layer.is-open { display: block; animation: gh-menu-in .12s ease; }
+.gh-layer--menu { padding: 12px; min-width: 200px; }
+.gh-layer--flush { padding: 0; }
+/* 内嵌 gh-menu 时去掉它自带的边框/阴影，避免和浮层外壳叠成两层。
+   border-radius 也要清零：菜单自己带圆角 + overflow-x:hidden 就成了滚动裁切容器，
+   首/末项贴边（菜单 padding 为 0）时 6px 圆角的胶囊会被 12px 的裁切弧削掉一角，
+   看起来像“上下圆角不一致”。留白由浮层外壳的 padding 负责。 */
+.gh-layer .gh-menu { --gh-menu-pad: 0px; padding: 0; border: none; box-shadow: none; background: transparent; animation: none; border-radius: 0; }
+/* 浮层可滚动，首/末项的 hover 胶囊贴着圆角会被 overflow 裁成斜角：
+   给菜单项留出与面板圆角相称的边距，并把内容裁切限制在圆角之内 */
+
+/* ============ gh-drawer ============ */
+.gh-drawer {
+  display: none; position: fixed; inset: 0; z-index: 1050;
+  background: var(--gh-scrim);
+}
+.gh-drawer[open] { display: block; }
+.gh-drawer__panel {
+  position: absolute; top: 0; right: 0; height: 100%;
+  width: min(var(--gh-drawer-width, 360px), 92vw);
+  display: flex; flex-direction: column;
+  background: var(--gh-dialog-bg); border-left: 1px solid var(--gh-border);
+  box-shadow: var(--gh-shadow);
+  /* 只圆内侧两角：面板贴住视口上下边，外侧保持直角 */
+  border-radius: var(--gh-radius-lg) 0 0 var(--gh-radius-lg);
+  overflow: hidden;
+  animation: gh-drawer-in .16s ease;
+}
+.gh-drawer--left .gh-drawer__panel {
+  right: auto; left: 0; border-left: none; border-right: 1px solid var(--gh-border);
+  border-radius: 0 var(--gh-radius-lg) var(--gh-radius-lg) 0;
+  animation-name: gh-drawer-in-left;
+}
+@keyframes gh-drawer-in { from { transform: translateX(16px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes gh-drawer-in-left { from { transform: translateX(-16px); opacity: .6; } to { transform: none; opacity: 1; } }
+.gh-drawer__header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 16px; border-bottom: 1px solid var(--gh-border-muted);
+}
+.gh-drawer__head { display: inline-flex; align-items: center; flex: none; line-height: 0; }
+.gh-drawer__head:empty { display: none; }
+.gh-drawer__title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+.gh-drawer__body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; --gh-tabs-flush-pad: 16px; }
+.gh-drawer__foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 16px; border-top: 1px solid var(--gh-border-muted);
+}
+.gh-drawer__foot:empty { display: none; }
+.gh-drawer__panel:focus { outline: none; }
+
+/* 导航抽屉：内容铺满，分隔线由 body 里的 hr 画 */
+.gh-drawer--nav .gh-drawer__header { border-bottom: 0; padding: 14px 16px 16px; }
+.gh-drawer--nav .gh-drawer__body { padding: 8px 12px 16px; }
+.gh-drawer--nav .gh-drawer__body > hr {
+  height: 1px; margin: 8px 0; border: 0; background: var(--gh-border-muted);
+}
+
+
+/* ============ gh-segmented ============ */
+.gh-segmented {
+  /* 控件总高与内边距都用变量：分段高度自动 = 总高 - 2×内边距 - 2×边框，
+     这样文字与选中底板始终垂直居中；改 --gh-segmented-h 即可整体变高变矮 */
+  --gh-segmented-h: 32px;
+  --gh-segmented-pad: 2px;
+  display: inline-flex; align-items: center; gap: 2px;
+  position: relative;
+  height: var(--gh-segmented-h);
+  padding: var(--gh-segmented-pad); box-sizing: border-box;
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+}
+/* expand：占满可用宽度，各分段等分（弹层/表单里整行铺满时用） */
+.gh-segmented--expand { display: flex; width: 100%; }
+.gh-segmented--expand .gh-segment { flex: 1 1 0; justify-content: center; }
+/* 滑动底板：选中态的白底+描边从分段自身移到这一层，切换时滑块滑过去 */
+.gh-segmented__thumb {
+  position: absolute; left: 0; top: 0; z-index: 0;
+  display: none; box-sizing: border-box;
+  background: var(--gh-control-active);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius-sm);
+  box-shadow: 0 1px 0 rgba(31, 35, 40, .04);
+  pointer-events: none;
+}
+.gh-segmented.is-ready .gh-segmented__thumb {
+  transition: transform .18s cubic-bezier(.2, .7, .3, 1),
+              width .18s cubic-bezier(.2, .7, .3, 1),
+              height .18s cubic-bezier(.2, .7, .3, 1);
+}
+.gh-segment {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 100%; padding: 0 12px; box-sizing: border-box;
+  border: 1px solid transparent; border-radius: var(--gh-radius-sm);
+  background: none; color: var(--gh-fg-muted);
+  font-size: 13px; line-height: 1;
+  position: relative; z-index: 1;
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: color .15s ease;
+}
+.gh-segment:hover { color: var(--gh-fg); }
+.gh-segment.is-active {
+  background: transparent;
+  border-color: transparent; color: var(--gh-fg);
+  box-shadow: none;
+}
+.gh-segment:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-segment[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.gh-segment gh-icon { flex: none; color: currentColor; line-height: 0; }
+.gh-segmented[aria-disabled="true"] { opacity: .6; }
+.gh-segmented[aria-disabled="true"] .gh-segment { cursor: not-allowed; }
+
+/* ============ gh-range ============ */
+.gh-range { display: inline-flex; align-items: center; gap: 10px; width: 100%; }
+.gh-range__input {
+  /* 不能写 width:100%，否则 flex 基准吃满整行，把右侧数值挤出容器 */
+  flex: 1 1 0%; width: auto; min-width: 0; height: 20px; margin: 0;
+  -webkit-appearance: none; appearance: none;
+  background: transparent; cursor: pointer;
+}
+.gh-range__input::-webkit-slider-runnable-track {
+  height: 4px; border-radius: var(--gh-radius-pill);
+  background: linear-gradient(to right,
+    var(--gh-accent) 0 var(--gh-range-pct, 50%),
+    var(--gh-border-muted) var(--gh-range-pct, 50%) 100%);
+}
+.gh-range__input::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
+  border-radius: 50%; background: #fff; border: 1px solid var(--gh-border);
+  box-shadow: 0 1px 2px rgba(31, 35, 40, .25); cursor: grab;
+}
+.gh-range__input:focus-visible { outline: none; }
+.gh-range__input:focus-visible::-webkit-slider-thumb { box-shadow: var(--gh-focus-ring); }
+.gh-range__input::-moz-range-track {
+  height: 4px; border-radius: var(--gh-radius-pill); background: var(--gh-border-muted);
+}
+.gh-range__input::-moz-range-progress {
+  height: 4px; border-radius: var(--gh-radius-pill); background: var(--gh-accent);
+}
+.gh-range__input::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--gh-border);
+  box-shadow: 0 1px 2px rgba(31, 35, 40, .25);
+}
+.gh-range__value {
+  flex: none; min-width: 2.4em; text-align: right;
+  font-size: 12px; color: var(--gh-fg-muted); font-variant-numeric: tabular-nums;
+}
+.gh-range.is-disabled { opacity: .55; }
+.gh-range.is-disabled .gh-range__input { cursor: not-allowed; }
+
+/* ============ gh-split-button ============ */
+.gh-split { position: relative; display: inline-flex; align-items: stretch; }
+.gh-split__main.gh-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.gh-split__caret.gh-btn {
+  width: 30px; padding: 0; margin-left: -1px;
+  /* .gh-btn 默认 flex-start，箭头区没有内边距支撑，必须显式居中 */
+  justify-content: center;
+  border-top-left-radius: 0; border-bottom-left-radius: 0;
+}
+/* 纯图标区域不做文字基线的 0.5px 下移，保持几何居中；展开时旋转成向上的箭头 */
+.gh-split__caret > svg,
+.gh-split__caret > gh-icon > svg { transform: none; transition: transform .15s ease; }
+.gh-split__caret gh-icon { display: inline-flex; line-height: 0; }
+.gh-split.is-open .gh-split__caret > svg,
+.gh-split.is-open .gh-split__caret > gh-icon > svg { transform: rotate(180deg); }
+.gh-split__caret.gh-btn--primary,
+.gh-split__caret.gh-btn--danger {
+  /* 分隔线只保留 1px：改边框色而不再叠加 inset 阴影，否则深色边 + 白线会变成 2px 的接缝 */
+  border-left-color: rgba(255, 255, 255, .24);
+  box-shadow: none;
+}
+.gh-split__menu {
+  display: none; position: absolute; z-index: 1100;
+  width: auto; min-width: 180px;
+  max-height: min(320px, 60vh); overflow-y: auto;
+}
+.gh-split.is-open .gh-split__menu { display: flex; }
+
+/* ============ gh-tag-input ============ */
+gh-tag-input {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  position: relative; min-height: var(--gh-control-lg); padding: 4px 8px;
+  box-sizing: border-box;
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius); cursor: text;
+  transition: border-color .12s, box-shadow .12s;
+}
+gh-tag-input:focus-within { border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+gh-tag-input.is-disabled { background: var(--gh-canvas-subtle); cursor: not-allowed; }
+.gh-tag-input__field {
+  flex: 1 1 90px; min-width: 90px; padding: 3px 0;
+  border: none; outline: none; background: none;
+  font-family: inherit; font-size: 14px; color: var(--gh-fg);
+}
+.gh-tag-input__field::placeholder { color: var(--gh-fg-muted); }
+.gh-tag-input__menu {
+  display: none; position: absolute; z-index: 1100;
+  max-height: 240px; overflow-y: auto;
+}
+gh-tag-input.is-open .gh-tag-input__menu { display: flex; }
+.gh-chip {
+  display: inline-flex; align-items: center; gap: 2px; max-width: 100%;
+  height: 22px; padding: 0 2px 0 8px; box-sizing: border-box;
+  border-radius: 2em; font-size: 12px; line-height: 1;
+  background: var(--gh-accent-subtle); color: var(--gh-accent);
+  border: 1px solid rgba(9, 105, 218, .28);
+}
+.gh-chip__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-chip__x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; padding: 0; border: none; border-radius: 50%;
+  background: none; color: currentColor; opacity: .7; cursor: pointer;
+}
+.gh-chip__x:hover { opacity: 1; background: rgba(9, 105, 218, .12); }
+.gh-chip__x svg { width: 10px; height: 10px; }
+.gh-menu__empty { padding: 8px; font-size: 12px; color: var(--gh-fg-muted); text-align: center; }
+
+
+/* ============ gh-copy-button ============ */
+/* 默认在所在行里垂直居中：和 34px 的输入框同排时不会顶到上面去 */
+.gh-copy { display: inline-flex; align-items: center; align-self: center; }
+/* 需要和输入框等高时（克隆框那种）给宿主加 gh-copy--fill，并可用 --gh-copy-size 指定高度 */
+.gh-copy--fill { align-self: stretch; }
+.gh-copy--fill .gh-copy__btn { height: 100%; min-height: var(--gh-control-sm); }
+.gh-copy__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: var(--gh-copy-size, var(--gh-control-sm)); height: var(--gh-copy-size, var(--gh-control-sm)); padding: 0 6px; box-sizing: border-box;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas); color: var(--gh-fg-muted);
+  font-family: inherit; font-size: 12px; cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.gh-copy__btn:hover { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-copy__btn:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-copy__btn svg { flex: none; }
+.gh-copy.is-copied .gh-copy__btn {
+  color: var(--gh-success); border-color: var(--gh-success);
+}
+.gh-copy.is-failed .gh-copy__btn {
+  color: var(--gh-danger); border-color: var(--gh-danger);
+}
+
+/* ============ gh-code-block ============ */
+.gh-code {
+  display: block; overflow: hidden;
+  /* 作为 flex 子项时必须允许收缩，否则 pre 的固有宽度会把整页撑宽 */
+  min-width: 0; max-width: 100%;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas-subtle);
+}
+.gh-code__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; border-bottom: 1px solid var(--gh-border);
+  background: var(--gh-canvas);
+}
+.gh-code__head[hidden] { display: none; }
+.gh-code__title {
+  font-size: 12px; font-weight: 600; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-code__body { min-width: 0; overflow-x: auto; }
+.gh-code__pre {
+  margin: 0; padding: 12px 16px;
+  font-family: var(--gh-mono); font-size: 12px; line-height: 20px;
+  tab-size: 2; color: var(--gh-fg);
+}
+.gh-code__code { white-space: pre; display: block; }
+.gh-code__line { display: block; min-height: 20px; }
+.gh-code--numbered .gh-code__code { counter-reset: gh-code-line; }
+.gh-code--numbered .gh-code__line {
+  position: relative; padding-left: var(--gh-code-gutter, 34px);
+  counter-increment: gh-code-line;
+}
+.gh-code--numbered .gh-code__line::before {
+  content: counter(gh-code-line);
+  position: absolute; left: 0; width: calc(var(--gh-code-gutter, 34px) - 12px);
+  text-align: right;
+  color: var(--gh-fg-muted); opacity: .65; user-select: none;
+}
+.gh-code__t-kw { color: var(--gh-code-kw); }
+.gh-code__t-str { color: var(--gh-code-str); }
+.gh-code__t-com { color: var(--gh-code-com); font-style: italic; }
+.gh-code__t-num { color: var(--gh-code-num); }
+
+/* ============ gh-skeleton ============ */
+.gh-skeleton { display: flex; flex-direction: column; gap: 8px; }
+.gh-skeleton--circle, .gh-skeleton--rect { display: inline-flex; }
+.gh-skeleton__bar {
+  display: block; position: relative; overflow: hidden;
+  height: 12px; border-radius: var(--gh-radius); background: var(--gh-skeleton-bg);
+}
+.gh-skeleton--circle .gh-skeleton__bar { border-radius: 50%; }
+.gh-skeleton--rect .gh-skeleton__bar { border-radius: var(--gh-radius); }
+.gh-skeleton__bar::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--gh-skeleton-shine), transparent);
+  transform: translateX(-100%);
+  animation: gh-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes gh-skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ============ gh-pagination ============ */
+.gh-pagination {
+  display: inline-flex; align-items: center; gap: 2px;
+  /* 容器变窄时页码换行，而不是把页面撑出横向滚动条 */
+  max-width: 100%; flex-wrap: wrap; justify-content: flex-start;
+}
+.gh-page {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; height: 30px; padding: 0 8px; box-sizing: border-box;
+  border: 1px solid transparent; border-radius: var(--gh-radius);
+  background: none; color: var(--gh-fg-muted);
+  font-family: inherit; font-size: 14px; line-height: 20px; cursor: pointer;
+}
+.gh-page:hover:not(:disabled) { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-page:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-page:disabled { opacity: .4; cursor: default; }
+.gh-page.is-current {
+  background: var(--gh-accent-subtle); color: var(--gh-accent); font-weight: 600;
+}
+.gh-page__gap {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; color: var(--gh-fg-muted); user-select: none;
+}
+.gh-pagination--sm .gh-page { min-width: 26px; height: 26px; font-size: 13px; }
+.gh-pagination--sm .gh-page__gap { min-width: 20px; }
+
+/* ============ gh-option-list / gh-option ============ */
+gh-option-list:not(:defined), gh-option:not(:defined), gh-select-menu:not(:defined),
+gh-composer:not(:defined) { display: none; }
+.gh-option-list {
+  display: flex; flex-direction: column; min-width: 0; outline: none;
+  /* 与弹层边框的统一留白：标题/搜索框/列表都不再各带水平 padding */
+  padding: 8px;
+}
+.gh-option-list__heading {
+  padding: 2px 0 6px;
+  font-size: 12px; font-weight: 500; line-height: 16px; color: var(--gh-fg-muted);
+}
+.gh-option-list__search { position: relative; padding: 0 0 8px; }
+.gh-option-list__search-icon {
+  position: absolute; left: 10px; top: 9px;
+  color: var(--gh-fg-muted); line-height: 0; pointer-events: none;
+}
+.gh-option-list__input {
+  width: 100%; height: var(--gh-control-lg); box-sizing: border-box;
+  padding: 0 10px 0 30px;
+  font-family: inherit; font-size: 14px; line-height: 20px; color: var(--gh-fg);
+  background: var(--gh-canvas); border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.gh-option-list__input:focus { border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+.gh-option-list__input::placeholder { color: var(--gh-fg-muted); }
+.gh-option-list__input::-webkit-search-cancel-button { display: none; }
+
+.gh-option-list__scroll {
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  max-height: var(--gh-option-list-max, 320px);
+  padding: 0;
+}
+
+/* 垂直居中：两行（标题 + 说明）时勾选/图标/复选框要落在整行中线，
+   而不是贴在第一行标题上；单行时等价于原来按 20px 行高对齐。 */
+.gh-option {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--gh-radius);
+  font-size: 14px; line-height: 20px; color: var(--gh-fg);
+  cursor: pointer; user-select: none;
+  transition: background-color .1s ease;
+}
+.gh-option:hover, .gh-option.is-active { background: var(--gh-row-bg-cursor); }
+.gh-option[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.gh-option[hidden], .gh-option-group[hidden], .gh-option-list__empty[hidden] { display: none; }
+.gh-option--desc { padding-top: 8px; padding-bottom: 8px; }
+/* 行间距与 gh-menu 一致（4px），避免相邻两行高亮时粘成一块 */
+.gh-option + .gh-option { margin-top: 4px; }
+.gh-option-group__label + .gh-option { margin-top: 4px; }
+/* 带分隔线的列表：线画在行间空隙里，避免被高亮背景盖掉 */
+.gh-option-list--divided .gh-option + .gh-option::before {
+  content: ''; position: absolute; left: 8px; right: 8px; top: -2px;
+  height: 1px; background: var(--gh-border-muted);
+}
+
+/* 单选：前置勾（未选中时占位不显示，保证文字左对齐） */
+.gh-option__tick {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 20px; color: var(--gh-fg);
+}
+.gh-option__tick svg { visibility: hidden; }
+.gh-option[aria-selected="true"] .gh-option__tick svg { visibility: visible; }
+
+/* 多选：复选框（行已是 align-items: center，不再需要 margin-top 微调） */
+.gh-option__box {
+  flex: none; width: 16px; height: 16px; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius-sm);
+  background: var(--gh-canvas); color: var(--gh-fg-on-emphasis);
+  transition: background-color .12s, border-color .12s;
+}
+.gh-option__box svg { visibility: hidden; }
+.gh-option[aria-selected="true"] .gh-option__box {
+  background: var(--gh-accent-emphasis); border-color: var(--gh-accent-emphasis);
+}
+.gh-option[aria-selected="true"] .gh-option__box svg { visibility: visible; }
+.gh-option-list--multiple .gh-option__tick { display: none; }
+.gh-option-list:not(.gh-option-list--multiple) .gh-option__box { display: none; }
+
+.gh-option__media {
+  flex: none; display: inline-flex; align-items: center; height: 20px;
+  color: var(--gh-fg); line-height: 0;
+}
+.gh-option__media[hidden] { display: none; }
+.gh-option__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gh-option__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-option__desc { margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--gh-fg-muted); }
+
+/* 分组：整宽一行，分隔线横贯列表；不再用负 margin 外扩，避免撑出横向滚动 */
+.gh-option-group { display: block; margin-inline: 0; padding-inline: 0; }
+.gh-option-group + .gh-option-group,
+.gh-option + .gh-option-group { margin-top: 4px; border-top: 1px solid var(--gh-border-muted); }
+.gh-option-group:first-child { margin-top: 0; border-top: 0; }
+.gh-option-group__label {
+  padding: 10px 8px 2px;
+  font-size: 13px; font-weight: 600; line-height: 18px; color: var(--gh-fg);
+}
+.gh-option-list__empty {
+  padding: 20px 12px; text-align: center;
+  font-size: 13px; color: var(--gh-fg-muted);
+}
+
+/* ============ gh-select-menu（触发按钮 + 弹层 + 列表） ============ */
+.gh-select-menu { display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; }
+.gh-select-menu > gh-popover { display: inline-flex; align-items: center; max-width: 100%; }
+/* 触发按钮是表单控件，与 gh-input / gh-select 同高（34px），不随 gh-btn 的 32px */
+.gh-select-menu__btn { height: var(--gh-control-lg); }
+.gh-select-menu__label {
+  min-width: 0; max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-select-menu__icon { flex: none; }
+.gh-select-menu__caret {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  line-height: 0; color: var(--gh-fg-muted); margin-left: 2px;
+  transition: transform .15s ease;
+}
+.gh-select-menu__btn[aria-expanded="true"] .gh-select-menu__caret { transform: rotate(180deg); }
+.gh-select-menu__caret > svg { display: block; width: 16px; height: 16px; }
+/* 默认图标包在 gh-icon 里；把它压成块级，箭头盒与 caret 盒严格对齐 */
+.gh-select-menu__caret > gh-icon { display: block; line-height: 0; }
+.gh-select-menu__caret > gh-icon > svg { display: block; width: 16px; height: 16px; }
+/* 默认 triangle-down 字形中心在 16 网格的 55.7%，不是盒中心。
+   只旋转 svg 并把轴对准字形中心：展开朝上时箭头留在原位，不会上浮约 2px；
+   自定义 slot 图标（chevron 等）仍旋转 wrapper、保持盒中心轴 */
+.gh-select-menu__btn[aria-expanded="true"] .gh-select-menu__caret.is-triangle { transform: none; }
+.gh-select-menu__btn[aria-expanded="true"] .gh-select-menu__caret.is-triangle svg {
+  /* 带上 gh-icon > svg 的 0.5px 光学下移，开合前后字形位置才能完全一致 */
+  transform: translateY(.5px) rotate(180deg); transform-origin: 50% 55.7%;
+}
+.gh-select-menu__caret.is-triangle svg { transition: transform .15s ease; }
+.gh-split__caret.is-triangle > svg { transform-origin: 50% 55.7%; }
+
+/* ============ gh-composer ============ */
+.gh-composer {
+  display: block; padding: 14px 14px 10px; box-sizing: border-box;
+  background: var(--gh-canvas);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius-lg);
+  box-shadow: 0 1px 3px rgba(31, 35, 40, .04);
+  transition: border-color .15s, box-shadow .15s;
+}
+.gh-composer:hover { border-color: var(--gh-border-muted); }
+.gh-composer:focus-within { box-shadow: 0 2px 8px rgba(31, 35, 40, .08); }
+.gh-composer.is-disabled { opacity: .6; }
+.gh-composer__input {
+  display: block; width: 100%; box-sizing: border-box;
+  min-height: 28px; max-height: 200px; padding: 2px 4px 10px;
+  font-family: inherit; font-size: 16px; line-height: 24px; color: var(--gh-fg);
+  background: transparent; border: 0; outline: none; resize: none;
+}
+.gh-composer__input::placeholder { color: var(--gh-fg-muted); }
+.gh-composer__input:disabled { cursor: not-allowed; }
+.gh-composer__bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 8px; }
+.gh-composer__bar[hidden] { display: none; }
+.gh-composer__start, .gh-composer__end { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.gh-composer__end { margin-left: auto; }
+.gh-composer__send {
+  position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--gh-control-md); height: var(--gh-control-md); padding: 0; border: 0; border-radius: var(--gh-radius);
+  background: transparent; color: var(--gh-fg-muted); cursor: pointer;
+  transition: background-color .12s, color .12s;
+}
+.gh-composer__send:hover:not(:disabled) { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-composer__send:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-composer__send:disabled { opacity: .4; cursor: default; }
+/* 发送按钮与右侧工具之间的竖分隔线 */
+.gh-composer__send:not(:first-child)::before {
+  content: ''; position: absolute; left: -4px; top: 7px; bottom: 7px;
+  width: 1px; background: var(--gh-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-option, .gh-option__box, .gh-composer, .gh-composer__send { transition: none; }
+}
+
+/* ============ gh-editor ============ */
+/* Markdown 评论编辑器：头部是「Write / Preview」两个 tab，直接用 gh-tabs 的默认样式
+   （50px 行高、32px 胶囊、选中态加粗 + 底部 3px 橙色指示条）；右侧是格式工具条，
+   中间是内嵌边框的输入框 / 预览区，底部是 Markdown 提示与提交按钮。 */
+gh-editor { display: block; }
+.gh-editor {
+  display: block; box-sizing: border-box;
+  background: var(--gh-canvas);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius-lg);
+  transition: border-color .15s, box-shadow .15s;
+}
+/* 聚焦不抬卡片：和普通输入框一样，只有里面输入区的蓝框 */
+.gh-editor.is-disabled { opacity: .6; }
+
+.gh-editor__head {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 4px 8px; padding: 0 8px; box-sizing: border-box;
+  border-bottom: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius-lg) var(--gh-radius-lg) 0 0;
+}
+.gh-editor__tabs { flex: 1 1 auto; min-width: 0; }
+/* 分割线由头部画一条通栏的，tabs 自己那条去掉即可；胶囊/指示条/字号全部沿用 gh-tabs 默认值 */
+.gh-editor .gh-tabs__list { box-shadow: none; }
+.gh-editor .gh-tabs__panels { display: none; }
+
+.gh-editor__toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+  gap: 2px; flex: 0 0 auto; padding: 4px 0;
+}
+.gh-editor__tool {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; box-sizing: border-box;
+  border: 0; border-radius: var(--gh-radius); background: transparent;
+  color: var(--gh-fg-muted); cursor: pointer;
+  transition: background-color .12s, color .12s;
+}
+.gh-editor__tool:hover:not(:disabled) { background: var(--gh-canvas-hover); color: var(--gh-fg); }
+.gh-editor__tool:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.gh-editor__tool:disabled { opacity: .5; cursor: default; }
+.gh-editor__tool svg { display: block; }
+.gh-editor__sep { flex: none; width: 1px; height: 18px; margin: 0 3px; background: var(--gh-border); }
+
+.gh-editor__main { position: relative; padding: 12px; }
+.gh-editor__input, .gh-editor__preview {
+  display: block; box-sizing: border-box; width: 100%;
+  min-height: var(--gh-editor-min, 120px);
+  padding: 8px 12px; margin: 0;
+  font-family: inherit; font-size: 14px; line-height: 1.5;
+  color: var(--gh-fg); background: var(--gh-canvas);
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+}
+/* 高度由 --gh-editor-min 决定，用户仍可拖右下角调整（行内 height 覆盖） */
+.gh-editor__input { height: var(--gh-editor-min, 120px); resize: vertical; outline: none; transition: border-color .15s, box-shadow .15s; }
+.gh-editor__input::placeholder { color: var(--gh-fg-muted); }
+/* 和 .gh-input__inner:focus 用同一套聚焦：accent 边框 + 1px 内描边 */
+.gh-editor__input:focus { border-color: var(--gh-accent); box-shadow: inset 0 0 0 1px var(--gh-accent); }
+.gh-editor__input[hidden], .gh-editor__preview[hidden] { display: none; }
+.gh-editor__preview { overflow-wrap: anywhere; }
+.gh-editor__preview:empty::before { content: attr(data-empty); color: var(--gh-fg-muted); }
+
+.gh-editor__foot {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 0 12px 12px;
+}
+/* 只剩一条静态提示：Markdown 支持说明 */
+.gh-editor__hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 0;
+  font-size: 12px; line-height: 18px; color: var(--gh-fg-muted);
+}
+.gh-editor__hint svg { flex: none; }
+.gh-editor__grow { flex: 1 1 auto; }
+.gh-editor__submit { flex: none; }
+.gh-editor__submit[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-editor, .gh-editor__input, .gh-editor__tool, .gh-editor__hint { transition: none; }
+}
+
+/* ============ 侧栏 gh-sidebar ============ */
+/* 一列分组导航：当前项是「灰底胶囊 + 左侧 3px 强调条」（沿用 gh-menu 的当前项规则），
+   组间自动画分隔线；collapsed 时收成 64px 的 icon rail，文案进 tooltip。 */
+gh-sidebar {
+  --gh-sidebar-width: 296px;
+  --gh-sidebar-rail: 64px;
+  --gh-sidebar-gutter: 16px;
+  display: flex; flex-direction: column;
+  width: var(--gh-sidebar-width); flex: none;
+  box-sizing: border-box; padding: 12px 0;
+  background: var(--gh-canvas);
+  border-right: 1px solid var(--gh-border);
+  overflow-y: auto; overflow-x: hidden;
+  transition: width .15s ease;
+}
+gh-sidebar.is-collapsed { --gh-sidebar-gutter: 8px; width: var(--gh-sidebar-rail); }
+
+/* 折叠时 body/footer 的左右内边距 16 → 8，跟着一起过渡，否则图标会「跳」一下 */
+.gh-sidebar__body {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 var(--gh-sidebar-gutter);
+  transition: padding .15s ease;
+}
+.gh-sidebar__group { display: flex; flex-direction: column; gap: 2px; }
+/* 分隔线要压过下面「侧栏里的菜单去外壳」的 border:none，所以多一层特异度 */
+.gh-sidebar .gh-sidebar__group + .gh-sidebar__group {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--gh-border);
+  transition: margin-top .15s ease, padding-top .15s ease;
+}
+.gh-sidebar__footer {
+  margin-top: auto; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px var(--gh-sidebar-gutter) 0;
+  transition: padding .15s ease;
+}
+
+/* 侧栏里的菜单去掉外壳，行高固定 32px。
+   overflow 必须放出来：当前项的强调条画在 item 左侧外面（-12px），
+   被 .gh-menu 的 overflow-x:hidden 裁掉就整条消失。 */
+.gh-sidebar .gh-menu {
+  gap: 2px; padding: 0; overflow: visible;
+  border: none; background: transparent; box-shadow: none; animation: none;
+}
+/* 行宽从满行（100%）过渡到 32px 小方块，左右外边距 0 → 8px，
+   这样折叠/展开时图标是滑向中间，不是瞬间居中 */
+.gh-sidebar .gh-menu__item {
+  height: 32px; width: 100%; padding: 0 8px;
+  border-radius: var(--gh-radius);
+  transition: width .15s ease, margin .15s ease, padding .15s ease,
+    gap .15s ease, background-color .15s ease;
+}
+/* 侧栏里的嵌套项同样「胶囊满行、缩进只加在内容上」，否则会被上面的 0 8px 压掉缩进 */
+.gh-sidebar .gh-menu__sub .gh-menu__item { padding-left: calc(var(--gh-menu-indent) + 8px); }
+.gh-sidebar .gh-sidebar__icon {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; line-height: 0; color: var(--gh-fg-muted);
+}
+/* 文案宽度收到 0 而不是 display:none，折叠过渡里才会跟图标一起滑 */
+.gh-sidebar .gh-sidebar__label {
+  min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: max-width .15s ease, opacity .12s ease;
+}
+.gh-sidebar .gh-menu__item[aria-current="page"] .gh-sidebar__icon { color: var(--gh-fg); }
+/* 强调条的几何由「行状态」统一块按 --gh-row-bar-inset 决定，这里不再手算 left/height */
+/* 分组小标题行（静态、不进 focus 顺序）：图标 + 深色文字 */
+.gh-sidebar .gh-sidebar__heading { cursor: default; }
+.gh-sidebar .gh-sidebar__heading:hover { background: none; }
+.gh-sidebar .gh-sidebar__heading .gh-sidebar__icon { color: var(--gh-fg-muted); }
+
+/* 折叠态：只剩图标，水平居中；文案、chevron、子菜单全部隐藏 */
+gh-sidebar.is-collapsed .gh-sidebar__body,
+gh-sidebar.is-collapsed .gh-sidebar__footer { padding: 0 8px; }
+gh-sidebar.is-collapsed .gh-sidebar__group + .gh-sidebar__group { margin-top: 6px; padding-top: 6px; }
+/* 收起时行宽收成 32×32 的小方块并居中：胶囊不再是撑满轨道的长条。
+   rail 64 - body 左右内边距 8*2 = 48 的内容区，32 宽 + 两侧各 8 正好居中，
+   用具体外边距（而不是 auto）才能参与 transition。
+   居中用 padding-left: 8px 而不是 justify-content: center —— 后者会在折叠瞬间
+   切换对齐方式，图标会先向右跳一下再回来。 */
+gh-sidebar.is-collapsed .gh-menu__item {
+  width: 32px; margin-inline: 8px;
+  padding: 0 0 0 8px;
+}
+gh-sidebar.is-collapsed .gh-sidebar__label { max-width: 0; opacity: 0; }
+gh-sidebar.is-collapsed .gh-menu__chevron,
+gh-sidebar.is-collapsed .gh-menu__heading,
+gh-sidebar.is-collapsed .gh-menu__hint,
+gh-sidebar.is-collapsed .gh-menu__sub { display: none; }
+/* 分组标题在 rail 里保留图标（只隐藏文字），当作视觉分隔与提示 */
+gh-sidebar.is-collapsed .gh-sidebar__heading {
+  display: flex; width: 32px; margin-inline: 8px;
+  padding: 0 0 0 8px;
+  opacity: .75;
+}
+/* rail 里只留图标，徽标胶囊放不下 */
+gh-sidebar.is-collapsed .gh-sidebar__pill { display: none; }
+
+.gh-sidebar__pill {
+  flex: none; margin-left: auto; padding: 0 7px;
+  height: 18px; display: inline-flex; align-items: center; box-sizing: border-box;
+  font-size: 12px; line-height: 16px; font-weight: 500;
+  color: var(--gh-success); background: transparent;
+  border: 1px solid color-mix(in srgb, var(--gh-success) 40%, transparent);
+  border-radius: 999px; white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  gh-sidebar,
+  .gh-sidebar__body,
+  .gh-sidebar__footer,
+  .gh-sidebar .gh-sidebar__group + .gh-sidebar__group,
+  .gh-sidebar .gh-menu__item,
+  .gh-sidebar .gh-sidebar__label { transition: none; }
+}
+
+/* ============ 细滚动条 ============ */
+/* Chromium / Safari：无箭头按钮、圆角半透明滑块；轨道透明、不额外占视觉重量。
+   多行输入区（编辑器 / composer / textarea 输入框）和弹层、侧栏共用同一套，
+   避免同一个页面里出现「10px 细滑块 + 系统粗滚动条」两种观感。
+   Firefox 不支持 ::-webkit-scrollbar，另用 scrollbar-width/color（见下方 @supports）。 */
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar {
+  width: 10px; height: 10px;
+}
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar-track {
+  background: transparent;
+}
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar-thumb {
+  background-color: var(--gh-scrollbar-thumb);
+  /* 透明描边把滑块收窄成 6px，并留出与内容/边框的呼吸位 */
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+  min-height: 24px; min-width: 24px;
+}
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar-thumb:hover {
+  background-color: var(--gh-scrollbar-thumb-hover);
+}
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar-button {
+  display: none; width: 0; height: 0;
+}
+:where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+  .gh-table__scroll, .gh-code__body, .gh-side,
+  .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner)::-webkit-scrollbar-corner {
+  background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+  :where(.gh-menu, .gh-layer, .gh-dialog__body, .gh-drawer__body, .gh-option-list__scroll, gh-sidebar,
+    .gh-table__scroll, .gh-code__body, .gh-side,
+    .gh-editor__input, .gh-editor__preview, .gh-composer__input, textarea.gh-input__inner) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gh-scrollbar-thumb) transparent;
+  }
+}
+
+/* ============ 设置列表 gh-features / gh-feature / gh-callout ============ */
+.gh-features {
+  border: 1px solid var(--gh-border);
+  border-radius: var(--gh-radius);
+  background: var(--gh-canvas);
+  overflow: hidden;
+}
+.gh-feature { display: block; padding: 16px; }
+.gh-feature + .gh-feature { border-top: 1px solid var(--gh-border); }
+.gh-feature__row { display: flex; align-items: flex-start; gap: 16px; }
+.gh-feature__main { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0; }
+.gh-feature:not(.gh-feature--check) .gh-feature__main { display: block; }
+.gh-feature--check .gh-feature__main { cursor: pointer; user-select: none; }
+.gh-feature__input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; }
+.gh-feature__box {
+  position: relative; flex: none; width: 16px; height: 16px; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; border: 1px solid var(--gh-border); border-radius: var(--gh-radius-sm);
+  background: var(--gh-canvas);
+  transition: background-color .12s, border-color .12s, box-shadow .12s;
+}
+.gh-feature__box svg { display: none; width: 12px; height: 12px; color: var(--gh-fg-on-emphasis); }
+.gh-feature__input:checked + .gh-feature__box {
+  background: var(--gh-accent-emphasis); border-color: var(--gh-accent-emphasis);
+}
+.gh-feature__input:checked + .gh-feature__box svg { display: block; }
+.gh-feature__input:focus-visible + .gh-feature__box { box-shadow: var(--gh-focus-ring); }
+.gh-feature__input:disabled + .gh-feature__box { opacity: .5; }
+.gh-feature__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gh-feature__title { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--gh-fg); }
+.gh-feature__desc { font-size: 12px; line-height: 18px; color: var(--gh-fg-muted); }
+.gh-feature__control { display: flex; align-items: center; gap: 8px; flex: none; align-self: center; }
+.gh-feature--check .gh-feature__control { align-self: flex-start; }
+.gh-feature__body { margin-top: 16px; }
+.gh-feature--check .gh-feature__body { margin-left: 24px; }
+.gh-feature__body[hidden] { display: none; }
+.gh-feature__body > * + * { margin-top: 16px; }
+/* 展开区里的表单沿用设置页排版：标题 14px 正常色、说明 12px，控件按内容宽度而不是撑满 */
+.gh-feature__body .gh-field__label { font-size: 14px; color: var(--gh-fg); margin-bottom: 6px; }
+.gh-feature__body .gh-field__hint { font-size: 12px; }
+.gh-feature__body .gh-field__control .gh-select { width: fit-content; max-width: 100%; }
+.gh-feature__body .gh-select__trigger { width: auto; min-width: 260px; max-width: 100%; }
+.gh-feature.is-disabled .gh-feature__title,
+.gh-feature.is-disabled .gh-feature__desc { opacity: .5; }
+
+/* 提示卡：默认浅蓝填充（设置页里的说明块），可选语义色 / 描边 / 圆形图标底。
+   颜色都走 --gh-callout-* 变量，方便直接在标签上 DIY */
+.gh-callout {
+  --gh-callout-bg: var(--gh-accent-subtle);
+  --gh-callout-border: transparent;
+  --gh-callout-icon-bg: var(--gh-accent-subtle);
+  --gh-callout-icon-fg: var(--gh-accent);
+  --gh-callout-radius: var(--gh-radius);
+  --gh-callout-pad: 16px 20px;
+  display: flex; align-items: flex-start; gap: 16px;
+  flex-wrap: wrap; container-type: inline-size;
+  padding: var(--gh-callout-pad); box-sizing: border-box;
+  border: 1px solid var(--gh-callout-border);
+  border-radius: var(--gh-callout-radius);
+  background: var(--gh-callout-bg);
+  color: var(--gh-fg);
+}
+.gh-callout[variant="success"] {
+  --gh-callout-bg: var(--gh-success-subtle);
+  --gh-callout-icon-bg: var(--gh-success-subtle);
+  --gh-callout-icon-fg: var(--gh-success);
+}
+.gh-callout[variant="warning"] {
+  --gh-callout-bg: var(--gh-warning-subtle);
+  --gh-callout-icon-bg: var(--gh-warning-subtle);
+  --gh-callout-icon-fg: var(--gh-warning);
+}
+.gh-callout[variant="danger"] {
+  --gh-callout-bg: var(--gh-danger-subtle);
+  --gh-callout-icon-bg: var(--gh-danger-subtle);
+  --gh-callout-icon-fg: var(--gh-danger);
+}
+.gh-callout[variant="neutral"] {
+  --gh-callout-bg: var(--gh-canvas-subtle);
+  --gh-callout-icon-bg: var(--gh-canvas-subtle);
+  --gh-callout-icon-fg: var(--gh-fg-muted);
+}
+/* 白底描边形态：说明文字转 muted，链接沿用 GitHub 蓝 + 下划线 */
+.gh-callout--bordered { --gh-callout-bg: var(--gh-canvas); --gh-callout-border: var(--gh-border); }
+/* 带 variant 时上面这条会被 [variant="…"] 的填充色压掉，这里用更高特异度抢回白底
+   （图标底色仍保留语义色，即截图里「白卡 + 黄色圆形图标」） */
+.gh-callout[variant].gh-callout--bordered { --gh-callout-bg: var(--gh-canvas); }
+.gh-callout--bordered .gh-callout__desc { color: var(--gh-fg-muted); }
+.gh-callout__desc a { color: var(--gh-accent); text-decoration: underline; }
+.gh-callout__desc a:hover { text-decoration: none; }
+.gh-callout__desc > * + * { margin-top: 8px; }
+.gh-callout--dense { --gh-callout-pad: 12px 16px; }
+.gh-callout__main { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+.gh-callout__icon {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 2px; line-height: 0; color: var(--gh-callout-icon-fg);
+}
+.gh-callout--badge .gh-callout__icon {
+  margin-top: 0; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gh-callout-icon-bg);
+}
+.gh-callout--badge .gh-callout__icon > gh-icon > svg,
+.gh-callout--badge .gh-callout__icon > svg { width: 16px; height: 16px; }
+.gh-callout__text { min-width: 0; }
+.gh-callout__title { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--gh-fg); }
+.gh-callout__title:empty { display: none; }
+.gh-callout__desc { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--gh-fg); }
+.gh-callout__title:empty + .gh-callout__desc { margin-top: 0; }
+/* 操作区是包住 slot="action" 节点的一层，多个按钮自动排开 */
+.gh-callout__action {
+  flex: none; align-self: center;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+/* 窄容器：按钮折到正文下面，别把说明挤成一列单词（按卡片自身宽度判断，不看视口） */
+@container (max-width: 480px) {
+  .gh-callout__action { flex-basis: 100%; align-self: flex-start; }
+}
+@container (max-width: 360px) {
+  .gh-callout__action > gh-btn,
+  .gh-callout__action > .gh-btn { flex: 1 1 auto; justify-content: center; }
+}

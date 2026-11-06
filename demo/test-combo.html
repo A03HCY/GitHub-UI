@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>混搭边界测试</title>
+<style>
+  body { margin: 0; padding: 24px; font-family: -apple-system, "PingFang SC", sans-serif; background: var(--gh-canvas); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .clip { height: 78px; overflow: hidden; border: 1px solid var(--gh-border); border-radius: 8px; padding: 8px; margin-bottom: 18px; }
+  .clip p { margin: 0 0 6px; font-size: 12px; color: var(--gh-fg-muted); }
+  #out { font-size: 12px; white-space: pre-wrap; background: var(--gh-canvas-subtle); padding: 10px; border-radius: 8px; }
+</style>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body>
+
+<div class="row">
+  <gh-btn id="open-dialog" data-gh-open="dlg">1. 对话框里混搭</gh-btn>
+  <gh-btn id="open-drawer" data-gh-open="drw">2. 抽屉里开对话框</gh-btn>
+  <gh-btn id="open-nested">3. 对话框套对话框</gh-btn>
+  <gh-btn id="open-two-select">4. 两个下拉同时开</gh-btn>
+</div>
+
+<div class="clip">
+  <p>overflow:hidden 容器，触发器贴着下边缘</p>
+  <gh-dropdown>
+    <gh-btn id="clip-trigger">容器内下拉</gh-btn>
+    <gh-menu-item icon="copy">复制</gh-menu-item>
+    <gh-menu-item icon="archive">归档</gh-menu-item>
+  </gh-dropdown>
+</div>
+
+<pre id="out">running…</pre>
+
+<!-- 1. 对话框里塞各式控件 -->
+<gh-dialog id="dlg" title="混搭" ok-text="确定">
+  <gh-stack gap="12">
+    <gh-field label="标题"><gh-input id="in-input" placeholder="回车提交"></gh-input></gh-field>
+    <gh-field label="状态">
+      <gh-select id="in-select"><option>全部</option><option>进行中</option></gh-select>
+    </gh-field>
+    <gh-field label="负责人">
+      <gh-combobox id="in-combo" placeholder="搜索…">
+        <option>羽田舟</option><option>Aiden</option>
+      </gh-combobox>
+    </gh-field>
+    <gh-select-menu id="in-menu" icon="repo" label="仓库">
+      <option>Orbit</option><option>Docs</option>
+    </gh-select-menu>
+    <gh-dropdown>
+      <gh-btn id="in-drop">操作</gh-btn>
+      <gh-menu-item icon="trash" danger>删除</gh-menu-item>
+    </gh-dropdown>
+    <gh-tooltip text="这是提示" placement="top">
+      <gh-btn id="in-tip" size="icon" aria-label="提示"><gh-icon name="info"></gh-icon></gh-btn>
+    </gh-tooltip>
+    <gh-popover id="in-pop">
+      <gh-btn slot="trigger" id="in-pop-trigger">打开浮层</gh-btn>
+      <div style="padding:8px" id="in-pop-body">
+        浮层内容
+        <gh-select-menu id="in-pop-menu" label="浮层里的菜单">
+          <option>甲</option><option>乙</option>
+        </gh-select-menu>
+      </div>
+    </gh-popover>
+  </gh-stack>
+</gh-dialog>
+
+<!-- 2. 抽屉（内部再开一个对话框） -->
+<gh-drawer id="drw" title="筛选项" side="right" width="320px">
+  <gh-stack gap="12">
+    <gh-field label="分支"><gh-select id="drw-select"><option>main</option></gh-select></gh-field>
+    <gh-btn id="drw-open-dialog" data-gh-open="dlg2">在抽屉里打开对话框</gh-btn>
+  </gh-stack>
+  <div slot="footer"><gh-btn data-gh-close>关闭</gh-btn></div>
+</gh-drawer>
+
+<gh-dialog id="dlg2" title="抽屉上的对话框">
+  <p>这个对话框是从抽屉里打开的，应该盖在抽屉上面。</p>
+  <div slot="footer"><gh-btn data-gh-close>关闭</gh-btn></div>
+</gh-dialog>
+
+<!-- 3. 对话框套对话框 -->
+<gh-dialog id="dlg-outer" title="外层">
+  <p>外层内容</p>
+  <gh-btn id="open-inner">打开内层</gh-btn>
+  <div slot="footer"><gh-btn data-gh-close>关闭外层</gh-btn></div>
+</gh-dialog>
+
+<gh-dialog id="dlg-inner" title="内层">
+  <p>内层内容</p>
+  <div slot="footer"><gh-btn data-gh-close>关闭内层</gh-btn></div>
+</gh-dialog>
+
+<!-- 5. 筛选面板：popover 里塞 select + checkbox + 按钮（第二张图） -->
+<div class="row">
+  <gh-popover id="filter-pop" placement="bottom-start">
+    <gh-btn slot="trigger" id="filter-trigger"><gh-icon name="sliders"></gh-icon>筛选</gh-btn>
+    <gh-stack gap="12" style="width:240px">
+      <gh-field label="状态">
+        <gh-select id="filter-select"><option>全部</option><option>进行中</option><option>已完成</option></gh-select>
+      </gh-field>
+      <gh-checkbox id="filter-only" checked>只看我的</gh-checkbox>
+      <gh-btn variant="primary" size="sm" id="filter-apply">应用筛选</gh-btn>
+    </gh-stack>
+  </gh-popover>
+</div>
+
+<!-- 6. 仓库多选弹层：heading + 搜索框 + 复选框（第一张图） -->
+<div class="row">
+  <gh-select-menu id="repo-pick" icon="repo" label="All repositories" multiple searchable
+                  heading="Select a repository" search-placeholder="Search" width="320px">
+    <option>GodotProject/codon_model</option>
+    <option>A03HCY/Orbit</option>
+    <option>A03HCY/Learn-Everything</option>
+  </gh-select-menu>
+</div>
+
+<!-- 4. 两个原生式下拉 -->
+<div class="row">
+  <gh-select id="sel-a"><option>A1</option><option>A2</option></gh-select>
+  <gh-select id="sel-b"><option>B1</option><option>B2</option></gh-select>
+</div>
+
+<script>
+const results = [];
+const ok = (name, cond, extra = '') =>
+  results.push((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' → ' + extra : ''));
+const wait = (ms = 70) => new Promise((r) => setTimeout(r, ms));
+const $ = (s) => document.querySelector(s);
+const openPopovers = () => document.querySelectorAll('.gh-popover.is-open').length;
+const bodyLocked = () => getComputedStyle(document.body).overflow === 'hidden';
+// 真实键盘事件从焦点元素冒泡上来，所以按在 activeElement 上才是有效模拟
+const esc = (target) => (target || document.activeElement || document.body)
+  .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+addEventListener('unhandledrejection', (e) => {
+  document.getElementById('out').textContent = results.join('\n') + '\nREJECT ' + (e.reason && (e.reason.stack || e.reason.message));
+});
+addEventListener('error', (e) => {
+  const el = document.getElementById('out');
+  if (el) el.textContent = results.join('\n') + '\nERROR ' + e.message + ' @' + e.lineno;
+});
+addEventListener('DOMContentLoaded', async () => {
+  // 依赖构建产物：如果只拷走了 HTML（脚本 404），给一句明确提示，别让页面露出裸标签
+  if (!window.customElements || !customElements.get('gh-dialog')) {
+    document.body.innerHTML = `
+      <div style="max-width:560px;margin:60px auto;padding:20px;border:1px solid var(--gh-border,#d0d7de);border-radius:12px;
+                  font:14px/1.6 -apple-system,'PingFang SC',sans-serif;color:#1f2328;background:#fff">
+        <h2 style="margin:0 0 8px;font-size:16px">这个测试页需要 gh-ui.js</h2>
+        <p style="margin:0 0 12px;color:#59636e">
+          当前页面没有加载到组件库（<code>../dist/gh-ui.js</code>），所以标签没有升级、<code>&lt;option&gt;</code> 露出了原文。
+        </p>
+        <p style="margin:0 0 6px">两种打开方式：</p>
+        <ul style="margin:0 0 12px;padding-left:20px;color:#59636e">
+          <li>在项目根目录跑 <code>node serve.mjs</code>，访问 <code>http://localhost:8123/demo/test-combo.html</code></li>
+          <li>或直接打开自包含版本 <code>dist/gh-ui-test-combo.html</code></li>
+        </ul>
+        <p style="margin:0;color:#59636e">页面只接受单文件分发时，用 <code>npm run export:test</code> 重新打包。</p>
+      </div>`;
+    return;
+  }
+  const st = document.createElement('style');
+  st.textContent = '*{animation:none!important;transition:none!important}';
+  document.head.append(st);
+  $('#open-nested').addEventListener('click', () => $('#dlg-outer').show());
+  $('#open-inner').addEventListener('click', () => $('#dlg-inner').show());
+  await wait(120);
+
+  /* ---------- 1. 对话框里混搭 ---------- */
+  $('#open-dialog').focus();
+  $('#open-dialog').click();
+  await wait();
+  const dlg = $('#dlg');
+  ok('对话框打开', dlg.hasAttribute('open'));
+  ok('对话框锁滚动', bodyLocked());
+
+  const sel = $('#in-select');
+  sel.open();
+  await wait();
+  const selMenu = sel.querySelector('.gh-select__menu');
+  const sr = selMenu.getBoundingClientRect();
+  ok('select 弹层可见且在视口内', sr.width > 0 && sr.top >= 0 && sr.bottom <= innerHeight,
+    `${Math.round(sr.width)}x${Math.round(sr.height)} top=${Math.round(sr.top)}`);
+  ok('select 弹层 fixed 定位', getComputedStyle(selMenu).position === 'fixed', getComputedStyle(selMenu).position);
+  const atMenu = document.elementFromPoint(sr.left + 20, sr.top + 10);
+  ok('select 弹层没被对话框盖住', selMenu.contains(atMenu) || atMenu === selMenu, atMenu && atMenu.className);
+
+  esc(sel.querySelector('.gh-menu__item'));
+  await wait();
+  ok('Esc 关闭 select 弹层', !sel.classList.contains('is-open'));
+  ok('Esc 不关闭对话框', dlg.hasAttribute('open'));
+
+  // 1.2b 菜单里按 Tab：收起菜单、焦点回到触发器，不能跑到 body 上的浮层里
+  const tabMenu = $('#in-menu');
+  tabMenu.open();
+  await wait();
+  tabMenu.list.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  await wait();
+  ok('Tab 收起菜单', openPopovers() === 0, `open=${openPopovers()}`);
+  ok('Tab 后焦点回到触发器', document.activeElement === tabMenu.querySelector('.gh-select-menu__btn'),
+    document.activeElement && (document.activeElement.className || document.activeElement.tagName));
+  ok('焦点仍留在对话框内', dlg.contains(document.activeElement));
+
+  // 1.2 对话框内 popover：打开 → 里面再开 select-menu（父子浮层不能互相关掉）
+  $('#in-pop-trigger').click();
+  await wait();
+  const pop = $('#in-pop');
+  ok('对话框内 popover 打开', pop.content.classList.contains('is-open'));
+  const popMenu = $('#in-pop-menu');
+  popMenu.open();
+  await wait();
+  ok('浮层里的菜单能打开', openPopovers() === 2, `open=${openPopovers()}`);
+  ok('父浮层没有被关掉', pop.content.classList.contains('is-open'));
+  popMenu.close();
+  esc(pop.content);
+  await wait();
+  ok('Esc 关掉浮层且不关对话框', !pop.content.classList.contains('is-open') && dlg.hasAttribute('open'));
+
+  // 1.3 打开另一个独立 popover 时，第一个要自动关
+  $('#in-pop-trigger').click();
+  await wait();
+  const outside = document.createElement('gh-popover');
+  outside.innerHTML = '<gh-btn slot="trigger">另一个</gh-btn><div>内容</div>';
+  document.body.append(outside);
+  await wait();
+  outside.open();
+  await wait();
+  ok('打开新 popover 时旧的自动关闭', openPopovers() === 1, `open=${openPopovers()}`);
+  outside.close();
+  outside.remove();
+
+  // 1.4 表单模式：组件里的回车不能被对话框抢走
+  const combo = $('#in-combo');
+  const comboInput = combo.querySelector('input');
+  comboInput.value = '羽';
+  comboInput.dispatchEvent(new Event('input', { bubbles: true }));
+  combo.open();
+  await wait();
+  comboInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await wait();
+  ok('combobox 回车只选中，不提交对话框', dlg.hasAttribute('open') && comboInput.value === '羽田舟',
+    `${comboInput.value} open=${dlg.hasAttribute('open')}`);
+
+  // 1.5 对话框里的下拉项：点击不能触发表单提交
+  const inDrop = dlg.querySelector('gh-dropdown');
+  inDrop.querySelector('details').open = true;
+  await wait();
+  inDrop.querySelector('button.gh-menu__item').click();
+  await wait();
+  ok('点下拉项不提交对话框', dlg.hasAttribute('open'));
+
+  // 1.6 普通输入框回车仍应提交（正例）
+  const plain = $('#in-input').querySelector('input');
+  plain.focus();
+  plain.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  await wait();
+  ok('普通输入框回车仍提交', !dlg.hasAttribute('open'));
+
+  // 1.6b toast / tooltip 必须压在对话框之上
+  GHUI.toast('测试');
+  await wait();
+  const toast = document.querySelector('.gh-toast');
+  const tr = toast.getBoundingClientRect();
+  ok('toast 在对话框之上', toast.contains(document.elementFromPoint(tr.left + 8, tr.top + 8)),
+    document.elementFromPoint(tr.left + 8, tr.top + 8)?.className);
+
+  const tipHost = $('#in-tip').closest('gh-tooltip');
+  tipHost.dispatchEvent(new MouseEvent('mouseenter'));
+  await wait();
+  const tip = document.querySelector('.gh-tooltip.is-visible');
+  // tooltip 是 pointer-events:none，命中测试测不出来，改比较层级
+  ok('tooltip 在对话框之上', tip && parseInt(getComputedStyle(tip).zIndex, 10) > parseInt(getComputedStyle(dlg).zIndex, 10),
+    tip ? getComputedStyle(tip).zIndex : 'null');
+  tipHost.dispatchEvent(new MouseEvent('mouseleave'));
+
+  // 1.7 关闭对话框：内部 popover 不能残留
+  $('#open-dialog').click();
+  await wait();
+  $('#in-pop-trigger').click();
+  await wait();
+  dlg.close();
+  await wait();
+  ok('关闭对话框后内部 popover 收起', !pop.content.classList.contains('is-open'));
+  ok('关闭对话框后解锁滚动', !bodyLocked());
+  ok('关闭后焦点回到触发按钮', document.activeElement === $('#open-dialog'),
+    document.activeElement && (document.activeElement.id || document.activeElement.tagName));
+
+  /* ---------- 2. 抽屉里开对话框 ---------- */
+  $('#open-drawer').click();
+  await wait();
+  ok('抽屉打开', $('#drw').hasAttribute('open'));
+  const drwZ = parseInt(getComputedStyle($('#drw')).zIndex, 10);
+
+  $('#drw-open-dialog').click();
+  await wait();
+  const dlg2 = $('#dlg2');
+  const dlg2Z = parseInt(getComputedStyle(dlg2).zIndex, 10);
+  ok('抽屉内对话框打开', dlg2.hasAttribute('open'));
+  ok('后打开的对话框层级更高', dlg2Z > drwZ, `dialog=${dlg2Z} drawer=${drwZ}`);
+  const rr = dlg2.querySelector('.gh-dialog__panel').getBoundingClientRect();
+  const topEl = document.elementFromPoint(rr.left + rr.width / 2, rr.top + 20);
+  ok('对话框盖在抽屉上面', dlg2.contains(topEl), topEl && (topEl.id || topEl.className));
+
+  dlg2.close();
+  await wait();
+  ok('关掉上层对话框后抽屉仍在', $('#drw').hasAttribute('open'));
+  ok('抽屉仍锁滚动', bodyLocked());
+
+  const dsel = $('#drw-select');
+  dsel.open();
+  await wait();
+  const dsr = dsel.querySelector('.gh-select__menu').getBoundingClientRect();
+  ok('抽屉内 select 弹层在视口内', dsr.top >= 0 && dsr.bottom <= innerHeight, `top=${Math.round(dsr.top)}`);
+  esc(dsel.querySelector('.gh-menu__item'));
+  await wait();
+  ok('抽屉里 Esc 只关 select', !dsel.classList.contains('is-open') && $('#drw').hasAttribute('open'));
+  $('#drw').close();
+  await wait();
+  ok('关闭抽屉后解锁滚动', !bodyLocked());
+
+  /* ---------- 3. 对话框套对话框 ---------- */
+  $('#open-nested').click();
+  await wait();
+  ok('外层对话框打开', $('#dlg-outer').hasAttribute('open'));
+  $('#open-inner').click();
+  await wait();
+  ok('内层对话框打开', $('#dlg-inner').hasAttribute('open'));
+  const ir = $('#dlg-inner').querySelector('.gh-dialog__panel').getBoundingClientRect();
+  const itop = document.elementFromPoint(ir.left + ir.width / 2, ir.top + 20);
+  ok('内层盖在外层上面', $('#dlg-inner').contains(itop), itop && (itop.id || itop.className));
+
+  esc();
+  await wait();
+  ok('Esc 只关内层', !$('#dlg-inner').hasAttribute('open') && $('#dlg-outer').hasAttribute('open'));
+  esc();
+  await wait();
+  ok('再按 Esc 关外层', !$('#dlg-outer').hasAttribute('open'));
+  ok('全部关闭后解锁滚动', !bodyLocked());
+
+  /* ---------- 4. overflow 容器里的下拉 ---------- */
+  const clip = $('.clip');
+  const clipRect = clip.getBoundingClientRect();
+  $('#clip-trigger').click();
+  await wait();
+  const cmenu = $('.clip .gh-dropdown__menu');
+  const cr = cmenu.getBoundingClientRect();
+  ok('容器内下拉可见', cr.height > 0);
+  ok('下拉越过容器下边界（没被 overflow 裁掉）', cr.bottom > clipRect.bottom,
+    `menu.bottom=${Math.round(cr.bottom)} clip.bottom=${Math.round(clipRect.bottom)}`);
+  const ctop = document.elementFromPoint(cr.left + 10, Math.min(cr.bottom - 6, innerHeight - 2));
+  ok('越界部分仍可命中', cmenu.contains(ctop) || ctop === cmenu, ctop && ctop.className);
+  $('#clip-trigger').click();
+
+  /* ---------- 5. 两个原生式下拉互斥 ---------- */
+  const a = $('#sel-a'), b = $('#sel-b');
+  a.open();
+  await wait();
+  b.open();
+  await wait();
+  const openSelects = document.querySelectorAll('.gh-select.is-open').length;
+  ok('打开第二个 select 时第一个关闭', openSelects === 1, `open=${openSelects}`);
+  esc(b.querySelector('.gh-menu__item'));
+  await wait();
+
+  /* ---------- 6. 筛选面板：popover 里混搭 select + checkbox + 按钮 ---------- */
+  $('#filter-trigger').click();
+  await wait();
+  ok('筛选面板打开', $('#filter-pop').content.classList.contains('is-open'));
+  // 面板里的 select 打开时，不能把整个面板关掉
+  $('#filter-select').open();
+  await wait();
+  ok('面板里 select 打开后面板仍在', $('#filter-pop').content.classList.contains('is-open'));
+  ok('select 弹层在面板之上', openPopovers() >= 1 || document.querySelector('.gh-select.is-open'));
+  esc($('#filter-select').querySelector('.gh-menu__item'));
+  await wait();
+  ok('Esc 只关 select，不关面板', !$('#filter-select').classList.contains('is-open')
+    && $('#filter-pop').content.classList.contains('is-open'));
+  // checkbox：点内部 input 触发切换
+  const cb = $('#filter-only');
+  cb.querySelector('input').click();
+  await wait();
+  ok('checkbox 切换', !cb.checked, String(cb.checked));
+  cb.querySelector('input').click();
+  await wait();
+  ok('checkbox 再切回', cb.checked, String(cb.checked));
+  // 点「应用筛选」不关闭面板（普通按钮，不是触发器）
+  $('#filter-apply').click();
+  await wait();
+  ok('点应用按钮面板仍在', $('#filter-pop').content.classList.contains('is-open'));
+  // 点面板外部关闭
+  document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  await wait();
+  ok('点外部关闭面板', !$('#filter-pop').content.classList.contains('is-open'));
+
+  /* ---------- 7. 仓库多选弹层：搜索框与列表对齐 + 搜索过滤 ---------- */
+  $('#repo-pick').open();
+  await wait();
+  const rp = $('#repo-pick');
+  const input = rp.list.querySelector('.gh-option-list__input');
+  const heading = rp.list.querySelector('.gh-option-list__heading');
+  const firstOpt = rp.list.querySelector('.gh-option');
+  const inputRect = input.getBoundingClientRect();
+  const headingRect = heading.getBoundingClientRect();
+  const optRect = firstOpt.getBoundingClientRect();
+  // 比较「文本左缘」：标题文本 = heading 盒子左 + 其 padding-left；输入文本 = input 盒子左
+  const headingTextLeft = headingRect.left + parseFloat(getComputedStyle(heading).paddingLeft);
+  ok('搜索框与标题文本左缘对齐', Math.abs(inputRect.left - headingTextLeft) <= 1,
+    `input=${Math.round(inputRect.left)} headingText=${Math.round(headingTextLeft)}`);
+  ok('搜索框与选项右缘对齐', Math.abs(inputRect.right - optRect.right) <= 3,
+    `inputR=${Math.round(inputRect.right)} optR=${Math.round(optRect.right)}`);
+  // 搜索过滤
+  input.value = 'orbit';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  await wait();
+  const visible = rp.list.querySelectorAll('gh-option:not([hidden])').length;
+  ok('搜索过滤生效', visible === 1, `visible=${visible}`);
+  // 多选勾选
+  rp.list.querySelector('gh-option:not([hidden])').click();
+  await wait();
+  ok('多选勾选', rp.list.values.length === 1, rp.list.values.join(','));
+  ok('多选后保持打开', rp.popover.content.classList.contains('is-open'));
+  rp.close();
+  await wait();
+
+  document.getElementById('out').textContent = results.join('\n');
+});
+</script>
+</body>
+</html>

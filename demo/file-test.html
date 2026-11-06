@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>gh-file-picker 状态检查</title>
+<style>
+  body { margin: 0; padding: 24px; background: var(--gh-canvas); color: var(--gh-fg);
+         font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 560px; display: flex; flex-direction: column; gap: 20px; }
+</style>
+<script>
+  const themeParam = new URLSearchParams(location.search).get('theme');
+  if (themeParam) document.documentElement.dataset.ghTheme = themeParam;
+</script>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <gh-file-picker id="a" multiple accept="image/*,.pdf,.zip" max-size="2MB" max-files="5"></gh-file-picker>
+  <gh-file-picker id="b" variant="button" accept="image/*" hint="单张图片，不超过 2 MB"></gh-file-picker>
+  <gh-file-picker id="c" disabled accept=".pdf" hint="禁用状态"></gh-file-picker>
+</div>
+<script>
+  function imageFile(name) {
+    const c = document.createElement('canvas');
+    c.width = 240; c.height = 160;
+    const g = c.getContext('2d');
+    const grd = g.createLinearGradient(0, 0, 240, 160);
+    grd.addColorStop(0, '#4f8ef7'); grd.addColorStop(1, '#8b5cf6');
+    g.fillStyle = grd; g.fillRect(0, 0, 240, 160);
+    g.fillStyle = 'rgba(255,255,255,.9)';
+    g.beginPath(); g.arc(120, 80, 34, 0, Math.PI * 2); g.fill();
+    return new Promise((res) => c.toBlob((b) => res(new File([b], name, { type: 'image/png' })), 'image/png'));
+  }
+
+  addEventListener('DOMContentLoaded', async () => {
+    const picker = document.getElementById('a');
+    picker.uploader = (file, { onProgress }) => {
+      if (file.name.endsWith('.zip')) return Promise.reject(new Error('网络中断，请重试'));
+      if (file.name.endsWith('.pdf')) { onProgress(46); return new Promise(() => {}); }
+      onProgress(100);
+      return Promise.resolve();
+    };
+    const img = await imageFile('首页视觉稿.png');
+    picker.add([
+      img,
+      new File([new Uint8Array(1024 * 1024 * 1.4)], '产品需求文档-v3-final.pdf', { type: 'application/pdf' }),
+      new File([new Uint8Array(1024 * 620)], 'design-assets.zip', { type: 'application/zip' }),
+    ]);
+    await new Promise((r) => setTimeout(r, 600));
+
+    if (new URLSearchParams(location.search).get('state') === 'drag') {
+      // 截图环境里 CSS 异步注入 + 虚拟时间会让 transition 停在起始帧，先关掉过渡
+      document.head.insertAdjacentHTML('beforeend',
+        '<style>.gh-file-picker__zone,.gh-file-picker__icon{transition:none!important}</style>');
+      document.getElementById('a').classList.add('is-dragging');
+    }
+
+    if (new URLSearchParams(location.search).has('measure')) {
+      const box = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return [Math.round(r.width), Math.round(r.height)];
+      };
+      const cs = (sel, prop) => {
+        const el = document.querySelector(sel);
+        return el ? getComputedStyle(el)[prop] : null;
+      };
+      const out = {
+        host: box('#a'),
+        zone: box('#a .gh-file-picker__zone'),
+        item: box('#a .gh-file-picker__item'),
+        thumb: box('#a .gh-file-picker__thumb'),
+        bar: box('#a .gh-file-picker__bar'),
+        actions: box('#a .gh-file-picker__actions'),
+        compact: box('#b .gh-file-picker__zone'),
+        rowGap: cs('#a .gh-file-picker__list', 'rowGap'),
+        nameFont: cs('#a .gh-file-picker__name', 'fontSize'),
+        metaFont: cs('#a .gh-file-picker__meta', 'fontSize'),
+        hintFont: cs('#a .gh-file-picker__hint', 'fontSize'),
+        itemPadding: cs('#a .gh-file-picker__item', 'padding'),
+        zonePadding: cs('#a .gh-file-picker__zone', 'padding'),
+        overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        hostClass: document.getElementById('a').className,
+        zoneBorder: cs('#a .gh-file-picker__zone', 'borderColor') + ' ' + cs('#a .gh-file-picker__zone', 'borderStyle'),
+        zoneBg: cs('#a .gh-file-picker__zone', 'backgroundColor'),
+      };
+      document.body.insertAdjacentHTML('beforeend', '<pre id="m">' + JSON.stringify(out, null, 1) + '</pre>');
+    }
+    document.title = 'ready';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>gh-account / gh-nav-item</title>
+<style>
+  body { margin: 0; padding: 24px; background: var(--gh-canvas); color: var(--gh-fg);
+         font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .panel { width: 264px; padding: 8px; border: 1px solid var(--gh-border);
+           border-radius: 8px; background: var(--gh-canvas-subtle); }
+  .panel + .panel { margin-top: 16px; }
+</style>
+<script>
+  const theme = new URLSearchParams(location.search).get('theme');
+  if (theme) document.documentElement.dataset.ghTheme = theme;
+</script>
+<script defer src="../dist/gh-ui.js"></script>
+</head>
+<body>
+  <div class="panel">
+    <gh-account id="acc" name="A03HCY" subtitle="Your personal account" src="avatar.svg"></gh-account>
+    <gh-nav-item icon="home" active>Home</gh-nav-item>
+    <gh-nav-item icon="globe">Feed</gh-nav-item>
+  </div>
+
+  <div class="panel">
+    <gh-account name="羽田舟" subtitle="TeamFlow 组织"></gh-account>
+    <gh-nav-item icon="issue-opened" count="12">事项</gh-nav-item>
+    <gh-nav-item icon="calendar">日程</gh-nav-item>
+    <gh-nav-item icon="gear">设置</gh-nav-item>
+  </div>
+
+  <script>
+    addEventListener('DOMContentLoaded', () => {
+      const acc = document.getElementById('acc');
+      addEventListener('gh:switch', () => { acc.dataset.hit = 'switch'; });
+      addEventListener('gh:account', () => { acc.dataset.hit = 'account'; });
+    });
+  </script>
+</body>
+</html>

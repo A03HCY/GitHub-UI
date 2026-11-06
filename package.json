@@ -1,0 +1,20 @@
+{
+  "name": "gh-ui",
+  "version": "1.0.0",
+  "description": "GitHub-style web component library (light DOM custom elements)",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build-icons.mjs && esbuild src/index.js --bundle --format=iife --minify --outfile=dist/gh-ui.js",
+    "demo": "esbuild src/index.js --bundle --format=iife --outfile=dist/gh-ui.js --servedir=.",
+    "export": "node build-icons.mjs && esbuild src/index.js --bundle --format=iife --minify --outfile=dist/gh-ui.js && node export-demo.mjs",
+    "export:test": "node build-icons.mjs && esbuild src/index.js --bundle --format=iife --minify --outfile=dist/gh-ui.js && node export-demo.mjs demo/test-combo.html dist/gh-ui-test-combo.html",
+    "export:nested": "node build-icons.mjs && esbuild src/index.js --bundle --format=iife --minify --outfile=dist/gh-ui.js && node export-demo.mjs demo/test-nested.html dist/gh-ui-test-nested.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@primer/octicons": "^19.42.0",
+    "esbuild": "^0.28.2"
+  }
+}

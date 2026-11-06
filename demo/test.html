@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-gh-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>gh-ui 诊断</title>
+<script defer src="../dist/gh-ui.js"></script>
+<style>body{background:#fff;color:#1f2328;font:13px monospace;padding:16px} pre{white-space:pre-wrap}</style>
+</head>
+<body>
+<gh-header>
+  <gh-container>
+    <gh-stack direction="row" align="center" gap="8">
+      <gh-btn id="hbtn" variant="invisible" size="icon"><gh-icon name="sun"></gh-icon></gh-btn>
+      <gh-btn id="hbtn2">普通</gh-btn>
+    </gh-stack>
+  </gh-container>
+</gh-header>
+
+<gh-field label="状态">
+  <gh-select id="sel" name="state">
+    <option value="todo">待办</option>
+    <option value="in_progress" selected>进行中</option>
+  </gh-select>
+</gh-field>
+
+<gh-btn id="sz" size="icon">X</gh-btn>
+<pre id="out">measuring…</pre>
+
+<script>
+setTimeout(() => {
+  const g = (el, p) => getComputedStyle(el)[p];
+  const el = (id) => document.getElementById(id);
+  const rows = [];
+  const line = (name, node, props) =>
+    rows.push(name + ': ' + props.map((p) => p + '=' + g(node, p)).join(', '));
+
+  line('header.btn.invisible', el('hbtn'), ['backgroundColor', 'color', 'borderTopColor', 'width', 'height']);
+  line('header.btn.normal', el('hbtn2'), ['backgroundColor', 'color', 'borderTopColor']);
+  line('select.host', el('sel'), ['display', 'position', 'backgroundColor']);
+  const inner = el('sel').querySelector('select');
+  line('select.native', inner, ['appearance', 'backgroundColor', 'color', 'paddingRight']);
+  rows.push('select.options = ' + (inner ? inner.options.length : 'none'));
+  rows.push('select.value = ' + (inner ? inner.value : 'none'));
+  line('select.arrow', el('sel').querySelector('.gh-select__arrow'), ['position', 'color']);
+  line('btn.icon', el('sz'), ['width', 'height', 'paddingLeft']);
+  el('out').textContent = rows.join('\n');
+}, 400);
+</script>
+</body>
+</html>

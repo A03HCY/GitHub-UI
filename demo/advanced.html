@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill · Pull request #128 — gh-ui 高级示例</title>
+<style>
+  /* ==========================================================
+     页面级样式：只做「布局」和「页面私有件」，
+     颜色、圆角、字体全部来自库的 token，跟着主题走。     ========================================================== */
+  body {
+    margin: 0; background: var(--gh-canvas); color: var(--gh-fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gh-accent-fg); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .adv-muted { color: var(--gh-fg-muted); }
+  .adv-mono { font-family: var(--gh-mono); }
+
+  /* ---------- 顶部导航（深色 bar 内部） ---------- */
+  .adv-nav { display: flex; align-items: center; gap: 14px; min-height: 32px; }
+  .adv-nav__brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 15px; }
+  .adv-nav__brand:hover { text-decoration: none; opacity: .88; }
+  .adv-nav__links { display: flex; align-items: center; gap: 2px; }
+  .adv-nav__links a {
+    color: rgba(255, 255, 255, .76); font-size: 14px; font-weight: 500;
+    padding: 5px 10px; border-radius: 6px; line-height: 20px;
+  }
+  .adv-nav__links a:hover { color: #fff; background: rgba(255, 255, 255, .12); text-decoration: none; }
+  .adv-nav__links a.is-on { color: #fff; }
+
+  .adv-search {
+    display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 140px; max-width: 300px;
+    height: 30px; margin-left: auto; padding: 0 8px 0 10px; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .28); border-radius: 6px;
+    background: rgba(255, 255, 255, .07); color: rgba(255, 255, 255, .72);
+    font: inherit; font-size: 13px; text-align: left;
+  }
+  .adv-search:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+  .adv-search__ph { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .adv-kbd {
+    flex: none; padding: 0 5px; border-radius: 4px; line-height: 18px; font-size: 11px;
+    border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .1);
+    color: rgba(255, 255, 255, .66); font-family: var(--gh-mono);
+  }
+  .adv-nav__actions { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+  .adv-avatar-btn {
+    display: inline-flex; padding: 0; border: 0; background: none; cursor: pointer;
+    border-radius: 50%; line-height: 0;
+  }
+  .adv-avatar-btn:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+
+  /* ---------- 示例说明条 ---------- */
+  .adv-note {
+    border-bottom: 1px solid var(--gh-border); background: var(--gh-canvas-subtle);
+    font-size: 12px; color: var(--gh-fg-muted);
+  }
+  .adv-note__inner { display: flex; align-items: center; gap: 8px; padding: 7px 0; flex-wrap: wrap; }
+  .adv-note__inner a { margin-left: auto; font-weight: 500; }
+
+  /* ---------- 仓库头 + 仓库 tab ---------- */
+  .adv-repo { padding-top: 22px; }
+  .adv-repo__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .adv-repo__owner { font-size: 16px; font-weight: 500; }
+  .adv-repo__slash { color: var(--gh-fg-muted); }
+  .adv-repo__name { font-size: 20px; font-weight: 600; color: var(--gh-fg); letter-spacing: -.2px; }
+  .adv-repo__name:hover { color: var(--gh-accent-fg); }
+  .adv-repo__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .adv-repo__tabs {
+    display: flex; align-items: center; gap: 0; margin-top: 14px; overflow-x: auto;
+    border-bottom: 1px solid var(--gh-border); scrollbar-width: none;
+  }
+  .adv-repo__tabs::-webkit-scrollbar { display: none; }
+  .adv-repo__tabs a {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    padding: 9px 12px; margin-bottom: -1px; line-height: 20px; font-size: 14px;
+    color: var(--gh-fg); border-bottom: 2px solid transparent;
+  }
+  .adv-repo__tabs a:hover { border-bottom-color: var(--gh-border); text-decoration: none; }
+  .adv-repo__tabs a.is-on { font-weight: 600; border-bottom-color: var(--gh-tab-indicator); }
+
+  /* ---------- PR 标题区 ---------- */
+  .adv-pr { padding: 24px 0 2px; }
+  .adv-pr__row { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .adv-pr__heads { flex: 1 1 480px; min-width: 0; }
+  .adv-pr__title {
+    margin: 0; font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -.3px;
+    overflow-wrap: anywhere;
+  }
+  .adv-pr__num { color: var(--gh-fg-muted); font-weight: 400; }
+  .adv-pr__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--gh-fg-muted); }
+  .adv-pr__meta a { font-weight: 500; }
+  .adv-branch {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px;
+    background: var(--gh-canvas-subtle); color: var(--gh-fg); font-family: var(--gh-mono); font-size: 12px;
+  }
+  .adv-branch:hover { color: var(--gh-accent-fg); text-decoration: none; }
+  .adv-pr__actions { display: flex; align-items: center; gap: 8px; padding-top: 2px; }
+
+  .adv-tabs { margin-top: 10px; }
+
+  /* ---------- 两栏 ---------- */
+  .adv-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) 296px; gap: 24px;
+    align-items: start; padding: 18px 0 56px;
+  }
+  .adv-main { min-width: 0; }
+  .adv-aside { min-width: 0; position: sticky; top: 12px; display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 1000px) {
+    .adv-grid { grid-template-columns: minmax(0, 1fr); }
+    .adv-aside {
+      position: static; order: 2;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(262px, 1fr));
+    }
+  }
+
+  /* ---------- 合并卡片 ---------- */
+  .adv-merge { display: flex; flex-direction: column; gap: 14px; }
+  .adv-merge__status { display: flex; align-items: center; gap: 10px; }
+  .adv-merge__status strong { display: block; font-size: 15px; }
+  .adv-merge__checks {
+    display: flex; flex-direction: column; gap: 2px; padding: 10px 0;
+    border-top: 1px solid var(--gh-border-muted); border-bottom: 1px solid var(--gh-border-muted);
+  }
+  .adv-check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 3px 0; }
+  .adv-check-row__time { margin-left: auto; color: var(--gh-fg-muted); font-variant-numeric: tabular-nums; }
+  .adv-merge__actions { display: flex; align-items: stretch; }
+  /* gh-dropdown 内部是 details > summary，要让它们一起撑满高度，右侧小箭头才和大按钮等高 */
+  .adv-merge__actions > gh-dropdown { display: flex; align-items: stretch; }
+  .adv-merge__actions > gh-dropdown details,
+  .adv-merge__actions > gh-dropdown summary {
+    display: flex; align-items: stretch; height: 100%;
+  }
+  /* 库样式是 .gh-btn（0,1,0），页面样式要抬高权重才能盖住颜色 */
+  .gh-btn.adv-merge__btn {
+    flex: 1 1 auto; justify-content: center; font-weight: 600;
+    background: var(--gh-success-emphasis); border-color: rgba(0, 0, 0, .15); color: #fff;
+    border-top-right-radius: 0; border-bottom-right-radius: 0;
+  }
+  .gh-btn.adv-merge__btn:hover { background: var(--gh-success); border-color: rgba(0, 0, 0, .15); }
+  .gh-btn.adv-merge__caret {
+    align-self: stretch; margin-left: -1px; padding-inline: 10px; color: #fff;
+    background: var(--gh-success-emphasis); border-color: rgba(0, 0, 0, .15);
+    border-top-left-radius: 0; border-bottom-left-radius: 0;
+  }
+  .gh-btn.adv-merge__caret:hover { background: var(--gh-success); border-color: rgba(0, 0, 0, .15); }
+  .adv-merge__hint { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gh-fg-muted); }
+
+  /* ---------- 评论编辑区 ---------- */
+  .adv-comment { display: flex; gap: 12px; margin-top: 18px; }
+  .adv-comment__main { flex: 1; min-width: 0; }
+  .adv-comment__foot { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-comment__foot .adv-grow { flex: 1; }
+
+  /* ---------- 提交列表 ---------- */
+  .adv-listcard { border: 1px solid var(--gh-border); border-radius: var(--gh-radius); background: var(--gh-canvas); overflow: hidden; }
+  .adv-listcard + .adv-listcard { margin-top: 16px; }
+  .adv-listcard__head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: var(--gh-canvas-subtle); border-bottom: 1px solid var(--gh-border);
+    font-size: 13px; font-weight: 600;
+  }
+  .adv-listcard__head .adv-muted { font-weight: 400; }
+  .adv-commit { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+  .adv-commit + .adv-commit { border-top: 1px solid var(--gh-border-muted); }
+  .adv-commit__main { flex: 1; min-width: 0; }
+  .adv-commit__msg { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+  .adv-commit__meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-sha {
+    padding: 1px 6px; border-radius: 6px; font-family: var(--gh-mono); font-size: 11.5px;
+    background: var(--gh-canvas-subtle); border: 1px solid var(--gh-border-muted); color: var(--gh-fg);
+  }
+  .adv-add { color: var(--gh-success-fg); font-variant-numeric: tabular-nums; }
+  .adv-del { color: var(--gh-danger-fg); font-variant-numeric: tabular-nums; }
+  .adv-listcard__foot { padding: 10px 16px; border-top: 1px solid var(--gh-border); text-align: center; }
+
+  /* ---------- 检查 ---------- */
+  .adv-jobs { display: flex; flex-direction: column; }
+  .adv-job { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px; }
+  .adv-job + .adv-job { border-top: 1px solid var(--gh-border-muted); }
+  .adv-job__name { flex: 1; min-width: 0; }
+  .adv-job__dur { color: var(--gh-fg-muted); font-variant-numeric: tabular-nums; }
+  .adv-job--fail { background: color-mix(in srgb, var(--gh-danger-emphasis) 5%, transparent); }
+
+  /* ---------- 文件 diff ---------- */
+  .adv-diff { border: 1px solid var(--gh-border); border-radius: var(--gh-radius); overflow: hidden; background: var(--gh-canvas); }
+  .adv-diff + .adv-diff { margin-top: 16px; }
+  .adv-diff__head {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--gh-canvas-subtle); border-bottom: 1px solid var(--gh-border);
+    font-family: var(--gh-mono); font-size: 12.5px;
+  }
+  .adv-diff__head .adv-grow { flex: 1; }
+  .adv-diff__body { font-family: var(--gh-mono); font-size: 12.5px; line-height: 20px; overflow-x: auto; }
+  .adv-diff__hunk { padding: 4px 12px; color: var(--gh-fg-muted); background: var(--gh-canvas-subtle); border-top: 1px solid var(--gh-border-muted); border-bottom: 1px solid var(--gh-border-muted); }
+  .adv-diff__line { display: flex; min-width: max-content; }
+  .adv-diff__no {
+    flex: none; width: 52px; padding-right: 10px; text-align: right;
+    color: var(--gh-fg-muted); user-select: none; border-right: 1px solid var(--gh-border-muted);
+  }
+  .adv-diff__code { padding: 0 12px; white-space: pre; }
+  .adv-diff__line--add { background: color-mix(in srgb, var(--gh-success-emphasis) 12%, transparent); }
+  .adv-diff__line--add .adv-diff__no { background: color-mix(in srgb, var(--gh-success-emphasis) 18%, transparent); }
+  .adv-diff__line--del { background: color-mix(in srgb, var(--gh-danger-emphasis) 12%, transparent); }
+  .adv-diff__line--del .adv-diff__no { background: color-mix(in srgb, var(--gh-danger-emphasis) 18%, transparent); }
+  .adv-diff__line--add .adv-diff__code { color: var(--gh-success-fg); }
+  .adv-diff__line--del .adv-diff__code { color: var(--gh-danger-fg); }
+  .adv-kw { color: #cf222e; }
+  [data-gh-theme="dark"] .adv-kw { color: #ff7b72; }
+  .adv-str { color: #0a3069; }
+  [data-gh-theme="dark"] .adv-str { color: #a5d6ff; }
+  .adv-com { color: #6e7781; }
+
+  /* ---------- 侧栏卡片内部 ---------- */
+  .adv-person { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+  .adv-person__main { flex: 1; min-width: 0; }
+  .adv-person__sub { font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-labels { display: flex; flex-wrap: wrap; gap: 6px; }
+  .adv-issue { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 13px; }
+  .adv-issue gh-icon { margin-top: 2px; }
+  .adv-issue__sub { font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-boxlink { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; margin-top: 8px; }
+
+  /* ---------- 页脚 ---------- */
+  .adv-footer { border-top: 1px solid var(--gh-border); background: var(--gh-canvas-subtle); padding: 22px 0; }
+  .adv-footer__inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--gh-fg-muted); }
+  .adv-footer__brand { display: inline-flex; align-items: center; gap: 6px; color: var(--gh-fg); font-weight: 600; font-size: 13px; }
+  .adv-footer nav { display: flex; gap: 14px; margin-left: auto; }
+
+  @media (max-width: 640px) {
+    .adv-nav__links { display: none; }
+    .adv-pr__title { font-size: 22px; }
+    .adv-comment { flex-direction: column; }
+  }
+</style>
+<script defer src="../dist/gh-ui.js?v=0.28.7"></script>
+<script>
+  // 主题：?theme=dark 直接进暗色（方便截图），否则按 localStorage / 系统偏好
+  (function () {
+    try {
+      const q = new URLSearchParams(location.search).get('theme');
+      const saved = q || localStorage.getItem('gh-theme');
+      if (q) localStorage.setItem('gh-theme', q);
+      if (saved === 'dark' || saved === 'light') document.documentElement.dataset.ghTheme = saved;
+    } catch (_) { /* ignore */ }
+  })();
+</script>
+</head>
+<body>
+
+<!-- ============ 顶部导航 ============ -->
+<gh-header>
+  <gh-container>
+    <div class="adv-nav">
+      <a class="adv-nav__brand" href="index.html">
+        <gh-icon name="mark-github" size="28"></gh-icon>
+        <span>gh-ui</span>
+      </a>
+      <nav class="adv-nav__links" aria-label="主导航">
+        <a class="is-on" href="#">Pull requests</a>
+        <a href="#">Issues</a>
+        <a href="#">Marketplace</a>
+        <a href="#">Explore</a>
+      </nav>
+
+      <button class="adv-search" type="button" data-gh-open="adv-search-dialog" aria-label="搜索">
+        <gh-icon name="search" size="16"></gh-icon>
+        <span class="adv-search__ph">Search or jump to</span>
+        <span class="adv-kbd">/</span>
+      </button>
+
+      <div class="adv-nav__actions">
+        <gh-btn variant="invisible" size="icon" aria-label="通知">
+          <gh-icon name="bell" size="16"></gh-icon>
+          <gh-badge overlay max="9" color="#0969da">3</gh-badge>
+        </gh-btn>
+        <gh-dropdown align="right">
+          <button class="adv-avatar-btn" type="button" aria-label="账号菜单">
+            <gh-avatar size="28" src="av-1.svg"></gh-avatar>
+          </button>
+          <div class="gh-menu__heading">Signed in as <strong>A03HCY</strong></div>
+          <gh-menu-item icon="person">Your profile</gh-menu-item>
+          <gh-menu-item icon="repo">Your repositories</gh-menu-item>
+          <gh-menu-item icon="star">Your stars</gh-menu-item>
+          <gh-menu-item icon="gear">Settings</gh-menu-item>
+          <div class="gh-menu__divider"></div>
+          <gh-menu-item icon="sign-out" danger>Sign out</gh-menu-item>
+        </gh-dropdown>
+        <gh-btn id="adv-theme" variant="invisible" size="icon" aria-label="切换深浅主题">
+          <gh-icon name="moon" size="16"></gh-icon>
+        </gh-btn>
+      </div>
+    </div>
+  </gh-container>
+</gh-header>
+
+<div class="adv-note">
+  <gh-container>
+    <div class="adv-note__inner">
+      <gh-icon name="sparkle" size="14"></gh-icon>
+      <span>高级示例：40+ 个自定义标签拼出来的 Pull request 页面（tab、时间线、检查、diff、弹层、合并流程都可交互）</span>
+      <a href="index.html">← 返回组件演示</a>
+    </div>
+  </gh-container>
+</div>
+
+<!-- ============ 仓库头 ============ -->
+<div class="adv-repo">
+  <gh-container>
+    <div class="adv-repo__head">
+      <gh-icon name="repo" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+      <a class="adv-repo__owner" href="#">A03HCY</a>
+      <span class="adv-repo__slash">/</span>
+      <a class="adv-repo__name" href="#">Quill</a>
+      <gh-label variant="outline" size="sm">Public</gh-label>
+
+      <div class="adv-repo__actions">
+        <gh-btn size="sm" id="adv-star">
+          <gh-icon name="star"></gh-icon> Star
+          <gh-label rounded id="adv-star-count">1.2k</gh-label>
+        </gh-btn>
+        <gh-dropdown>
+          <gh-btn size="sm">
+            <gh-icon name="eye"></gh-icon> Watch <gh-icon name="triangle-down" size="12"></gh-icon>
+          </gh-btn>
+          <gh-menu-item icon="eye">Participating and @mentions</gh-menu-item>
+          <gh-menu-item icon="bell">All activity</gh-menu-item>
+          <gh-menu-item icon="eye-closed">Ignore</gh-menu-item>
+        </gh-dropdown>
+        <gh-dropdown>
+          <gh-btn size="sm">
+            <gh-icon name="git-branch"></gh-icon> Fork <gh-label rounded>128</gh-label>
+            <gh-icon name="triangle-down" size="12"></gh-icon>
+          </gh-btn>
+          <gh-menu-item icon="plus">Create a new fork</gh-menu-item>
+          <gh-menu-item icon="code">Open in codespace</gh-menu-item>
+        </gh-dropdown>
+      </div>
+    </div>
+
+    <nav class="adv-repo__tabs" aria-label="仓库导航">
+      <a href="#"><gh-icon name="code" size="16"></gh-icon> Code</a>
+      <a href="#"><gh-icon name="issue-opened" size="16"></gh-icon> Issues <gh-label rounded>12</gh-label></a>
+      <a class="is-on" href="#" aria-current="page"><gh-icon name="git-pull-request" size="16"></gh-icon> Pull requests <gh-label rounded>34</gh-label></a>
+      <a href="#"><gh-icon name="play" size="16"></gh-icon> Actions</a>
+      <a href="#"><gh-icon name="project" size="16"></gh-icon> Projects</a>
+      <a href="#"><gh-icon name="comment-discussion" size="16"></gh-icon> Discussions</a>
+      <a href="#"><gh-icon name="shield" size="16"></gh-icon> Security</a>
+      <a href="#"><gh-icon name="dashboard" size="16"></gh-icon> Insights</a>
+    </nav>
+  </gh-container>
+</div>
+
+<!-- ============ PR 主体 ============ -->
+<gh-container>
+  <div class="adv-pr">
+    <div class="adv-pr__row">
+      <div class="adv-pr__heads">
+        <h1 class="adv-pr__title">refactor(render): 把渲染管线拆成 stage graph <span class="adv-pr__num">#128</span></h1>
+        <div class="adv-pr__meta">
+          <gh-badge state="open" dot>Open</gh-badge>
+          <gh-avatar size="20" src="av-1.svg"></gh-avatar>
+          <a href="#">羽田舟</a>
+          <span>想将 <strong>14 个提交</strong> 合并进 main</span>
+          <a href="#">main</a>
+          <span>来自</span>
+          <a class="adv-branch" href="#"><gh-icon name="git-branch" size="14"></gh-icon>feat/stage-graph</a>
+          <span>·</span>
+          <span>3 小时前更新</span>
+        </div>
+      </div>
+
+      <div class="adv-pr__actions">
+        <gh-btn size="sm"><gh-icon name="pencil"></gh-icon> 编辑</gh-btn>
+        <gh-dropdown align="right">
+          <gh-btn size="sm">
+            <gh-icon name="code"></gh-icon> Code <gh-icon name="triangle-down" size="12"></gh-icon>
+          </gh-btn>
+          <gh-menu-item icon="desktop-download">Checkout in Desktop</gh-menu-item>
+          <gh-menu-item icon="terminal" shortcut="⌘K">Open in terminal</gh-menu-item>
+          <div class="gh-menu__divider"></div>
+          <gh-menu-item icon="copy" data-copy-branch>Copy branch name</gh-menu-item>
+          <gh-menu-item icon="link">Copy PR link</gh-menu-item>
+        </gh-dropdown>
+      </div>
+    </div>
+  </div>
+
+  <gh-tabs id="pr-tabs" class="adv-tabs">
+    <gh-tab panel="p-conv" selected><gh-icon name="comment"></gh-icon> 对话 <gh-label rounded>12</gh-label></gh-tab>
+    <gh-tab panel="p-commits"><gh-icon name="git-commit"></gh-icon> 提交 <gh-label rounded>14</gh-label></gh-tab>
+    <gh-tab panel="p-checks"><gh-icon name="check-circle"></gh-icon> 检查 <gh-label rounded>4</gh-label></gh-tab>
+    <gh-tab panel="p-files"><gh-icon name="file"></gh-icon> 文件 <gh-label rounded>6</gh-label></gh-tab>
+  </gh-tabs>
+
+  <div class="adv-grid">
+    <div class="adv-main">
+
+      <!-- ========== 面板 1：对话 ========== -->
+      <div id="p-conv">
+        <gh-timeline id="adv-timeline">
+          <gh-timeline-item card avatar="av-1.svg" author="羽田舟">
+            <span slot="header"><strong>羽田舟</strong> commented <gh-time datetime="2026-11-06T08:41:00"></gh-time></span>
+            <gh-label slot="header-actions" color="#1a7f37">Author</gh-label>
+            <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="更多操作">
+              <gh-icon name="kebab-horizontal"></gh-icon>
+            </gh-btn>
+            <gh-md>
+## 背景
+
+现在的 `Renderer` 是一整条 600 行的 `render()`，任何一步失败都只能整页重绘。这个 PR 把它拆成 **stage graph**：每个 stage 声明输入 / 输出，调度器按依赖顺序执行，失败时只重跑下游。
+## 改动
+
+- `pipeline.ts`：stage 注册与拓扑排序（循环依赖直接抛错）
+- `renderer.ts`：`render()` 变成 `scheduler.run()`
+- 新增 `--debug-pipeline`，打印每个 stage 的耗时
+- 移除三处多余的 `requestAnimationFrame` 兜底
+
+```ts
+const stages = defineStages([
+  { name: 'collect', run: collectNodes },
+  { name: 'style',   run: computeStyles, after: ['collect'] },
+  { name: 'layout',  run: layoutTree,    after: ['style'] },
+  { name: 'paint',   run: paintLayers,   after: ['layout'] },
+]);
+
+await scheduler.run(stages);
+```
+
+## 验证
+
+- [x] 单测：`pnpm test pipeline`（新增 38 个用例）
+- [x] 基准：首屏渲染 **412ms → 358ms**
+- [ ] 视觉回归（等 CI 跑完上传报告）            </gh-md>
+            <gh-reactions slot="footer">
+              <gh-reaction emoji="👍" count="4" active></gh-reaction>
+              <gh-reaction emoji="🎉" count="2"></gh-reaction>
+              <gh-reaction emoji="🚀" count="1"></gh-reaction>
+            </gh-reactions>
+          </gh-timeline-item>
+
+          <gh-timeline-item icon="git-commit">
+            <strong>羽田舟</strong> 添加了 6 个提交 <gh-time datetime="2026-11-06T09:02:00"></gh-time>
+          </gh-timeline-item>
+
+          <gh-timeline-item card avatar="av-2.svg" author="林一">
+            <span slot="header"><strong>林一</strong> reviewed <gh-time datetime="2026-11-06T09:28:00"></gh-time></span>
+            <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="更多操作">
+              <gh-icon name="kebab-horizontal"></gh-icon>
+            </gh-btn>
+            <gh-md>
+调度器这里有个隐患：`after` 只做了存在性校验，**没做去重**。两个 stage 同时依赖 `style` 时，`#sort()` 会把 `style` 推入两次，`run()` 就会执行两遍。
+```diff
+- for (const dep of stage.after ?? []) order.push(dep);
++ const deps = new Set(stage.after ?? []);
++ for (const dep of deps) order.push(dep);
+```
+
+顺带一提，`--debug-pipeline` 的输出如果能按 stage 缩进成树，会更直观。            </gh-md>
+            <gh-box plain title="建议：按依赖缩进打印" style="margin-top:10px">
+              <gh-code-block lang="bash" no-copy>collect            12ms
+└─ style            41ms
+   ├─ layout        96ms
+   └─ paint        203ms</gh-code-block>
+            </gh-box>
+            <gh-reactions slot="footer">
+              <gh-reaction emoji="👍" count="2"></gh-reaction>
+              <gh-reaction emoji="🎯" count="1" active></gh-reaction>
+            </gh-reactions>
+          </gh-timeline-item>
+
+          <gh-timeline-item bare icon="eye">
+            <gh-avatar slot="header" size="16" src="bot.svg" alt="kilo-code-bot"></gh-avatar>
+            <span slot="header"><strong>kilo-code-bot</strong> Bot reviewed <gh-time datetime="2026-11-06T09:41:00"></gh-time></span>
+            <a slot="header-actions" href="#">View reviewed changes</a>
+            <gh-file-list>
+              <gh-file-row path="src/render/pipeline.ts" state="resolved"></gh-file-row>
+              <gh-file-row path="src/render/renderer.ts" state="modified">
+                <div style="color:var(--gh-fg-muted)">render() 现在只调 scheduler.run()，四个阶段全部搬进 pipeline</div>
+              </gh-file-row>
+              <gh-file-row path="src/debug/pipeline-tree.ts" state="added">
+                <div style="color:var(--gh-fg-muted)">按依赖树打印 debug 输出</div>
+              </gh-file-row>
+            </gh-file-list>
+          </gh-timeline-item>
+
+          <gh-timeline-item icon="check-circle" variant="success">
+            <strong>林一</strong> approved these changes <gh-time datetime="2026-11-06T09:44:00"></gh-time>
+          </gh-timeline-item>
+
+          <gh-timeline-item dot>
+            <span class="adv-muted">新增评论会插到这里 ↓（在下面的输入框里写点东西，回车即可）</span>
+          </gh-timeline-item>
+        </gh-timeline>
+
+        <!-- 合并卡片 -->
+        <gh-box id="adv-merge" style="margin-top:16px">
+          <div class="adv-merge">
+            <div class="adv-merge__status">
+              <gh-icon name="check-circle" size="28" style="color: var(--gh-success)"></gh-icon>
+              <div>
+                <strong>所有检查已通过</strong>
+                <div class="adv-muted" style="font-size:12px">4 个检查 · 2 个批准 · 与 main 无冲突 </div>
+              </div>
+              <span style="margin-left:auto" data-switch-tab="p-checks">
+                <gh-btn size="sm" variant="invisible">查看全部检查 <gh-icon name="chevron-right" size="12"></gh-icon></gh-btn>
+              </span>
+            </div>
+
+            <div class="adv-merge__checks">
+              <div class="adv-check-row">
+                <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+                <span>构建 · build (linux)</span><span class="adv-check-row__time">2m 14s</span>
+              </div>
+              <div class="adv-check-row">
+                <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+                <span>单元测试 · vitest</span><span class="adv-check-row__time">48s</span>
+              </div>
+              <div class="adv-check-row">
+                <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+                <span>类型检查 · tsc --noEmit</span><span class="adv-check-row__time">31s</span>
+              </div>
+              <div class="adv-check-row">
+                <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+                <span>视觉回归 · playwright</span><span class="adv-check-row__time">3m 02s</span>
+              </div>
+            </div>
+
+            <div class="adv-merge__actions">
+              <gh-btn class="adv-merge__btn" size="lg" id="adv-merge-btn">
+                <gh-icon name="git-merge"></gh-icon> Squash and merge
+              </gh-btn>
+              <gh-dropdown align="right">
+                <gh-btn class="adv-merge__caret" size="lg" aria-label="选择合并方式">
+                  <gh-icon name="triangle-down" size="12"></gh-icon>
+                </gh-btn>
+                <gh-menu-item icon="git-merge">Create a merge commit</gh-menu-item>
+                <gh-menu-item icon="stack" active>Squash and merge</gh-menu-item>
+                <gh-menu-item icon="git-commit">Rebase and merge</gh-menu-item>
+              </gh-dropdown>
+            </div>
+
+            <div class="adv-merge__hint">
+              <gh-icon name="info" size="14"></gh-icon>
+              合并后将把 1 个提交并入 main，分支自动删除            </div>
+          </div>
+        </gh-box>
+
+        <!-- 评论输入 -->
+        <div class="adv-comment">
+          <gh-avatar size="32" src="av-5.svg"></gh-avatar>
+          <div class="adv-comment__main">
+            <gh-composer id="adv-composer" placeholder="留一条评论…（回车发送，支持 Markdown）" max-height="240"></gh-composer>
+            <div class="adv-comment__foot">
+              <span class="adv-grow">支持 Markdown，发送后会插入上面的时间线 </span>
+              <gh-btn size="sm" variant="invisible" id="adv-comment-cancel">取消</gh-btn>
+              <gh-btn size="sm" variant="primary" id="adv-comment-send">Comment</gh-btn>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 面板 2：提交 ========== -->
+      <div id="p-commits" hidden>
+        <div class="adv-listcard">
+          <div class="adv-listcard__head">
+            <gh-icon name="git-commit" size="16"></gh-icon>
+            <span>14 commits</span>
+            <span class="adv-muted">· feat/stage-graph</span>
+          </div>
+          <div class="adv-commit">
+            <gh-avatar size="24" src="av-1.svg"></gh-avatar>
+            <div class="adv-commit__main">
+              <div class="adv-commit__msg">refactor(render): 拆出 stage graph 调度器 </div>
+              <div class="adv-commit__meta">羽田舟 · 3 小时前 · <span class="adv-sha">a1b2c3d</span></div>
+            </div>
+            <gh-btn size="icon" variant="invisible" aria-label="复制 sha"><gh-icon name="copy"></gh-icon></gh-btn>
+          </div>
+          <div class="adv-commit">
+            <gh-avatar size="24" src="av-1.svg"></gh-avatar>
+            <div class="adv-commit__main">
+              <div class="adv-commit__msg">feat(debug): --debug-pipeline 打印依赖树 </div>
+              <div class="adv-commit__meta">羽田舟 · 3 小时前 · <span class="adv-sha">7f9e210</span></div>
+            </div>
+            <gh-btn size="icon" variant="invisible" aria-label="复制 sha"><gh-icon name="copy"></gh-icon></gh-btn>
+          </div>
+          <div class="adv-commit">
+            <gh-avatar size="24" src="av-2.svg"></gh-avatar>
+            <div class="adv-commit__main">
+              <div class="adv-commit__msg">fix(pipeline): after 去重，避免重复执行 </div>
+              <div class="adv-commit__meta">林一 · 2 小时前 · <span class="adv-sha">c44d8b1</span> · <span class="adv-add">+12</span> <span class="adv-del">−4</span></div>
+            </div>
+            <gh-btn size="icon" variant="invisible" aria-label="复制 sha"><gh-icon name="copy"></gh-icon></gh-btn>
+          </div>
+          <div class="adv-commit">
+            <gh-avatar size="24" src="av-1.svg"></gh-avatar>
+            <div class="adv-commit__main">
+              <div class="adv-commit__msg">test(pipeline): 38 个调度用例 </div>
+              <div class="adv-commit__meta">羽田舟 · 2 小时前 · <span class="adv-sha">0b21f7a</span></div>
+            </div>
+            <gh-btn size="icon" variant="invisible" aria-label="复制 sha"><gh-icon name="copy"></gh-icon></gh-btn>
+          </div>
+          <div class="adv-commit">
+            <gh-avatar size="24" src="av-4.svg"></gh-avatar>
+            <div class="adv-commit__main">
+              <div class="adv-commit__msg">chore: 移除 requestAnimationFrame 兜底</div>
+              <div class="adv-commit__meta">陈默 · 1 小时前 · <span class="adv-sha">e8a03cc</span> · <span class="adv-add">+3</span> <span class="adv-del">−27</span></div>
+            </div>
+            <gh-btn size="icon" variant="invisible" aria-label="复制 sha"><gh-icon name="copy"></gh-icon></gh-btn>
+          </div>
+          <div class="adv-listcard__foot"><a href="#">View all 14 commits</a></div>
+        </div>
+      </div>
+
+      <!-- ========== 面板 3：检查 ========== -->
+      <div id="p-checks" hidden>
+        <div class="adv-listcard">
+          <div class="adv-listcard__head">
+            <gh-icon name="check-circle" size="16" style="color: var(--gh-success)"></gh-icon>
+            <span>所有检查已通过</span>
+            <span class="adv-muted">· 4 successful · 0 failing</span>
+          </div>
+          <div class="adv-jobs">
+            <div class="adv-job">
+              <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+              <div class="adv-job__name"><strong>build (linux)</strong><div class="adv-muted">workflow: ci.yml · runner: ubuntu-latest</div></div>
+              <span class="adv-job__dur">2m 14s</span>
+              <gh-btn size="sm" variant="invisible">Details</gh-btn>
+            </div>
+            <div class="adv-job">
+              <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+              <div class="adv-job__name"><strong>vitest --coverage</strong><div class="adv-muted">412 passed · 0 failed · 覆盖率达 91.2%</div></div>
+              <span class="adv-job__dur">48s</span>
+              <gh-btn size="sm" variant="invisible">Details</gh-btn>
+            </div>
+            <div class="adv-job">
+              <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+              <div class="adv-job__name"><strong>tsc --noEmit</strong><div class="adv-muted">0 errors · 0 warnings</div></div>
+              <span class="adv-job__dur">31s</span>
+              <gh-btn size="sm" variant="invisible">Details</gh-btn>
+            </div>
+            <div class="adv-job">
+              <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+              <div class="adv-job__name"><strong>playwright visual</strong><div class="adv-muted">128 张快照 · 0 差异</div></div>
+              <span class="adv-job__dur">3m 02s</span>
+              <gh-btn size="sm" variant="invisible">Details</gh-btn>
+            </div>
+          </div>
+        </div>
+
+        <gh-box style="margin-top:16px">
+          <gh-stack slot="bar" direction="row" align="center" gap="8">
+            <gh-icon name="workflow" size="16"></gh-icon>
+            <strong style="font-size:13px">构建 · 步骤</strong>
+            <gh-badge state="open" dot>通过</gh-badge>
+          </gh-stack>
+          <gh-steps current="3" vertical>
+            <gh-step meta="12s">检出代码 </gh-step>
+            <gh-step meta="48s">安装依赖（pnpm cache 命中） </gh-step>
+            <gh-step meta="2m 14s">构建产物</gh-step>
+            <gh-step meta="进行中">上传 artifact</gh-step>
+            <gh-step meta="未开始">通知 Slack</gh-step>
+          </gh-steps>
+        </gh-box>
+      </div>
+
+      <!-- ========== 面板 4：文件 ========== -->
+      <div id="p-files" hidden>
+        <div class="adv-diff">
+          <div class="adv-diff__head">
+            <gh-icon name="file" size="16"></gh-icon>
+            <span class="adv-grow">src/render/pipeline.ts</span>
+            <span class="adv-muted">+42</span>
+            <gh-btn size="sm" variant="invisible">Viewed</gh-btn>
+          </div>
+          <div class="adv-diff__body">
+            <div class="adv-diff__hunk">@@ -1,6 +1,60 @@</div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">1</span><span class="adv-diff__code">+ // Stage graph：每个 stage 声明依赖，调度器按拓扑序执行</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">2</span><span class="adv-diff__code">+ <span class="adv-kw">export type</span> Stage = {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">3</span><span class="adv-diff__code">+   name: <span class="adv-kw">string</span>;</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">4</span><span class="adv-diff__code">+   run: (ctx: Context) =&gt; <span class="adv-kw">Promise</span>&lt;<span class="adv-kw">void</span>&gt;;</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">5</span><span class="adv-diff__code">+   after?: <span class="adv-kw">string</span>[];</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">6</span><span class="adv-diff__code">+ };</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">7</span><span class="adv-diff__code">+</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">8</span><span class="adv-diff__code">+ <span class="adv-kw">export function</span> defineStages(stages: Stage[]): StageGraph {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">9</span><span class="adv-diff__code">+   <span class="adv-kw">const</span> graph = <span class="adv-kw">new</span> StageGraph(stages);</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">10</span><span class="adv-diff__code">+   graph.validate(); <span class="adv-com">// 循环依赖直接抛错</span></span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">11</span><span class="adv-diff__code">+   <span class="adv-kw">return</span> graph;</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">12</span><span class="adv-diff__code">+ }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">13</span><span class="adv-diff__code">+</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">14</span><span class="adv-diff__code">+ <span class="adv-kw">export class</span> StageGraph {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">15</span><span class="adv-diff__code">+   #order: <span class="adv-kw">string</span>[] = [];</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">16</span><span class="adv-diff__code">+   <span class="adv-kw">constructor</span>(<span class="adv-kw">private</span> stages: Stage[]) { <span class="adv-kw">this</span>.#sort(); }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">17</span><span class="adv-diff__code">+</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">18</span><span class="adv-diff__code">+   <span class="adv-kw">async</span> run(ctx: Context) {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">19</span><span class="adv-diff__code">+     <span class="adv-kw">for</span> (<span class="adv-kw">const</span> name <span class="adv-kw">of</span> <span class="adv-kw">this</span>.#order) {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">20</span><span class="adv-diff__code">+       <span class="adv-kw">const</span> t0 = <span class="adv-kw">performance</span>.now();</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">21</span><span class="adv-diff__code">+       <span class="adv-kw">await this</span>.byName(name).run(ctx);</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">22</span><span class="adv-diff__code">+       ctx.timings.set(name, <span class="adv-kw">performance</span>.now() - t0);</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">23</span><span class="adv-diff__code">+     }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">24</span><span class="adv-diff__code">+   }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">25</span><span class="adv-diff__code">+ }</span></div>
+          </div>
+        </div>
+
+        <div class="adv-diff">
+          <div class="adv-diff__head">
+            <gh-icon name="file" size="16"></gh-icon>
+            <span class="adv-grow">src/render/renderer.ts</span>
+            <span class="adv-muted">+6 −38</span>
+            <gh-btn size="sm" variant="invisible">Viewed</gh-btn>
+          </div>
+          <div class="adv-diff__body">
+            <div class="adv-diff__hunk">@@ -118,42 +118,10 @@ export class Renderer {</div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">118</span><span class="adv-diff__code">- async render() {</span></div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">119</span><span class="adv-diff__code">-   collectNodes(this.root);</span></div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">120</span><span class="adv-diff__code">-   computeStyles(this.root);</span></div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">121</span><span class="adv-diff__code">-   layout(this.root);</span></div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">122</span><span class="adv-diff__code">-   paint(this.root);</span></div>
+            <div class="adv-diff__line adv-diff__line--del"><span class="adv-diff__no">123</span><span class="adv-diff__code">- }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">118</span><span class="adv-diff__code">+ async render() {</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">119</span><span class="adv-diff__code">+   <span class="adv-kw">await this</span>.scheduler.run(<span class="adv-kw">this</span>.root);</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">120</span><span class="adv-diff__code">+ }</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">121</span><span class="adv-diff__code">+</span></div>
+            <div class="adv-diff__line adv-diff__line--add"><span class="adv-diff__no">122</span><span class="adv-diff__code">+ <span class="adv-com">// 失败时只重跑下游 stage，见 pipeline.ts</span></span></div>
+          </div>
+        </div>
+
+        <div class="adv-listcard" style="margin-top:16px">
+          <div class="adv-listcard__head">
+            <gh-icon name="file-directory" size="16"></gh-icon>
+            <span>还有 4 个文件 </span>
+            <span class="adv-muted">· 折叠未展开</span>
+          </div>
+          <div class="adv-commit">
+            <gh-icon name="file" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+            <div class="adv-commit__main"><span class="adv-mono" style="font-size:12.5px">src/debug/pipeline-tree.ts</span> <span class="adv-add">+64</span></div>
+            <gh-badge state="accent">新增</gh-badge>
+          </div>
+          <div class="adv-commit">
+            <gh-icon name="file" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+            <div class="adv-commit__main"><span class="adv-mono" style="font-size:12.5px">src/render/__tests__/pipeline.test.ts</span> <span class="adv-add">+182</span></div>
+            <gh-badge state="accent">新增</gh-badge>
+          </div>
+          <div class="adv-commit">
+            <gh-icon name="file" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+            <div class="adv-commit__main"><span class="adv-mono" style="font-size:12.5px">docs/pipeline.md</span> <span class="adv-add">+38</span> <span class="adv-del">−0</span></div>
+            <gh-badge state="warn">修改</gh-badge>
+          </div>
+          <div class="adv-commit">
+            <gh-icon name="file" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+            <div class="adv-commit__main"><span class="adv-mono" style="font-size:12.5px">package.json</span> <span class="adv-add">+2</span> <span class="adv-del">−1</span></div>
+            <gh-badge state="warn">修改</gh-badge>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 右侧栏 ========== -->
+    <aside class="adv-aside">
+      <gh-box title="Reviewers">
+        <div class="adv-person">
+          <gh-avatar size="24" src="av-2.svg"></gh-avatar>
+          <div class="adv-person__main">
+            <a href="#">林一</a>
+            <div class="adv-person__sub">approved 40 分钟前 </div>
+          </div>
+          <gh-icon name="check-circle" size="16" style="color: var(--gh-success)"></gh-icon>
+        </div>
+        <div class="adv-person">
+          <gh-avatar size="24" src="av-1.svg"></gh-avatar>
+          <div class="adv-person__main">
+            <a href="#">羽田舟</a>
+            <div class="adv-person__sub">approved 1 小时前 </div>
+          </div>
+          <gh-icon name="check-circle" size="16" style="color: var(--gh-success)"></gh-icon>
+        </div>
+        <div class="adv-person">
+          <gh-avatar size="24">陈</gh-avatar>
+          <div class="adv-person__main">
+            <a href="#">陈默</a>
+            <div class="adv-person__sub">等待评审</div>
+          </div>
+          <gh-badge state="warn">待处理 </gh-badge>
+        </div>
+        <gh-btn size="sm" variant="invisible" style="margin-top:4px"><gh-icon name="gear"></gh-icon> 管理评审人 </gh-btn>
+      </gh-box>
+
+      <gh-box title="Assignees">
+        <div class="adv-person">
+          <gh-avatar size="24" src="av-1.svg"></gh-avatar>
+          <div class="adv-person__main"><a href="#">羽田舟</a></div>
+          <gh-btn size="icon" variant="invisible" aria-label="编辑负责人"><gh-icon name="gear"></gh-icon></gh-btn>
+        </div>
+      </gh-box>
+
+      <gh-box title="Labels">
+        <div class="adv-labels">
+          <gh-label color="#0969da">performance</gh-label>
+          <gh-label color="#8250df">render-pipeline</gh-label>
+          <gh-label color="#bf8700">size/L</gh-label>
+        </div>
+        <gh-popover id="adv-label-popover" placement="bottom-end" width="264px" title="编辑标签" search search-placeholder="筛选标签">
+          <gh-btn slot="trigger" size="sm" variant="invisible"><gh-icon name="gear"></gh-icon> 编辑标签</gh-btn>
+          <gh-popover-item title="performance" hint="首屏与滚动性能" checked></gh-popover-item>
+          <gh-popover-item title="render-pipeline" hint="渲染管线相关" checked></gh-popover-item>
+          <gh-popover-item title="size/L" hint="超过 300 行" checked></gh-popover-item>
+          <gh-popover-item title="needs-review" hint="需要额外的评审"></gh-popover-item>
+          <gh-popover-item title="dependencies" hint="依赖升级"></gh-popover-item>
+          <div slot="footer">
+            <gh-btn size="sm" data-popover-close>取消</gh-btn>
+            <gh-btn size="sm" variant="primary" data-popover-close>应用</gh-btn>
+          </div>
+        </gh-popover>
+      </gh-box>
+
+      <gh-box title="Milestone">
+        <div class="adv-bar" style="gap:8px;color:var(--gh-fg);font-size:13px;font-weight:500">
+          <gh-icon name="milestone" size="16" style="color: var(--gh-fg-muted)"></gh-icon>
+          v0.9 · 稳定渲染
+        </div>
+        <gh-progress thin value="62" style="margin-top:10px"></gh-progress>
+        <div class="adv-bar" style="margin-top:6px">62% 完成 · 12 开启 3 关闭</div>
+      </gh-box>
+
+      <gh-box title="Linked issues">
+        <div class="adv-issue">
+          <gh-icon name="issue-opened" size="16" style="color: var(--gh-success)"></gh-icon>
+          <div>
+            <a href="#">RFC: 渲染管线拆成可调度的 stage graph</a>
+            <div class="adv-issue__sub">#98 · 4 条评论 </div>
+          </div>
+        </div>
+        <div class="adv-issue">
+          <gh-icon name="check" size="16" style="color: var(--gh-success)"></gh-icon>
+          <div>
+            <a href="#">首屏 412ms → 358ms</a>
+            <div class="adv-issue__sub">#112 · 已关闭 </div>
+          </div>
+        </div>
+      </gh-box>
+
+      <gh-box title="Participants">
+        <gh-avatar-stack max="4" style="margin-top:2px">
+          <gh-avatar size="26" src="av-1.svg"></gh-avatar>
+          <gh-avatar size="26" src="av-2.svg"></gh-avatar>
+          <gh-avatar size="26" src="av-4.svg"></gh-avatar>
+          <gh-avatar size="26" src="av-5.svg"></gh-avatar>
+          <gh-avatar size="26">默</gh-avatar>
+        </gh-avatar-stack>
+      </gh-box>
+
+      <gh-callout dense icon="info" title="落后 2 个提交" description="main 上有新的提交，合并前先同步">
+        <gh-btn slot="action" size="sm" id="adv-update">更新分支</gh-btn>
+      </gh-callout>
+    </aside>
+  </div>
+</gh-container>
+
+<!-- ============ 页脚 ============ -->
+<footer class="adv-footer">
+  <gh-container>
+    <div class="adv-footer__inner">
+      <span class="adv-footer__brand"><gh-icon name="mark-github" size="20"></gh-icon> gh-ui</span>
+      <span>高级示例 · 一个 Pull request 详情页 </span>
+      <nav>
+        <a href="index.html">组件演示</a>
+        <a href="#">文档</a>
+        <a href="#">GitHub</a>
+      </nav>
+    </div>
+  </gh-container>
+</footer>
+
+<!-- ============ 搜索弹窗 ============ -->
+<gh-dialog id="adv-search-dialog" title="搜索 Quill" width="wide" ok-text="打开" cancel-text="取消">
+  <gh-stack gap="12">
+    <gh-input icon="search" placeholder="搜索代码、issue、PR 或用户" value="stage graph"></gh-input>
+    <gh-list>
+      <gh-list-item icon="git-pull-request" title="refactor(render): 把渲染管线拆成 stage graph" meta="#128 · 羽田舟 · Open" selected></gh-list-item>
+      <gh-list-item icon="issue-opened" title="RFC: 渲染管线拆成可调度的 stage graph" meta="#98 · 4 条评论"></gh-list-item>
+      <gh-list-item icon="file" title="src/render/pipeline.ts" meta="42 次提交 · 最近一次 3 小时前"></gh-list-item>
+      <gh-list-item icon="person" title="陈默" meta="Maintainer · 76 commits this year"></gh-list-item>
+    </gh-list>
+    <p class="adv-muted" style="margin:0;font-size:12px">示例弹窗：输入框、列表、行状态都由组件提供，弹层关闭后不会残留状态。 </p>
+  </gh-stack>
+</gh-dialog>
+
+<script>
+  (function () {
+    const $ = (s, r = document) => r.querySelector(s);
+    const toast = (msg, kind) => window.GHUI && window.GHUI.toast(msg, kind);
+
+    /* 主题切换 */
+    const themeBtn = $('#adv-theme');
+    const syncThemeIcon = () => {
+      const dark = window.GHUI ? window.GHUI.theme() === 'dark' : false;
+      themeBtn.innerHTML = `<gh-icon name="${dark ? 'sun' : 'moon'}" size="16"></gh-icon>`;
+      themeBtn.setAttribute('aria-label', dark ? '切换到浅色' : '切换到深色');
+    };
+    themeBtn.addEventListener('click', () => {
+      const next = window.GHUI.theme() === 'dark' ? 'light' : 'dark';
+      window.GHUI.setTheme(next);
+      try { localStorage.setItem('gh-theme', next); } catch (_) { /* ignore */ }
+      syncThemeIcon();
+      toast(next === 'dark' ? '已切换到深色主题' : '已切换到浅色主题');
+    });
+    syncThemeIcon();
+
+    /* Star */
+    const star = $('#adv-star');
+    const starCount = $('#adv-star-count');
+    let starred = false;
+    star.addEventListener('click', () => {
+      starred = !starred;
+      starCount.textContent = starred ? '1.3k' : '1.2k';
+      star.innerHTML = `<gh-icon name="${starred ? 'star-fill' : 'star'}"></gh-icon> ${starred ? 'Starred' : 'Star'} <gh-label rounded id="adv-star-count">${starred ? '1.3k' : '1.2k'}</gh-label>`;
+      // innerHTML 换掉了原来的计数节点，重新拿一下引用       star._count = $('#adv-star-count');
+      toast(starred ? '已 Star：A03HCY/Quill' : '已取消 Star', starred ? 'ok' : '');
+    });
+
+    /* 分支名 / 链接复制 */
+    document.querySelectorAll('[data-copy-branch]').forEach((item) => {
+      item.addEventListener('click', () => {
+        const text = 'feat/stage-graph';
+        if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+        toast(`已复制分支名 ${text}`, 'ok');
+      });
+    });
+
+    /* 合并流程 */
+    $('#adv-merge-btn').addEventListener('click', () => {
+      window.GHUI.confirm({
+        title: 'Squash and merge',
+        message: '将 14 个提交压缩成 1 个提交合并进 main，合并后删除 feat/stage-graph 分支。',
+        okText: '合并',
+        cancelText: '再想想',
+      }).then((ok) => {
+        if (ok) toast('PR #128 已合并进 main 🎉', 'ok');
+      });
+    });
+
+    /* 更新分支 */
+    $('#adv-update').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '更新中';
+      setTimeout(() => {
+        btn.textContent = '已更新';
+        toast('分支已与 main 同步', 'ok');
+      }, 900);
+    });
+
+    /* 评论：回车发送 → 插进时间线 */
+    const composer = $('#adv-composer');
+    const timeline = $('#adv-timeline');
+    const addComment = (text) => {
+      const item = document.createElement('gh-timeline-item');
+      item.setAttribute('card', '');
+      item.setAttribute('avatar', 'av-5.svg');
+      item.setAttribute('author', 'A03HCY');
+      const safe = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      item.innerHTML = `
+        <span slot="header"><strong>A03HCY</strong> commented <span class="adv-muted">刚刚</span></span>
+        <gh-label slot="header-actions" color="#bf3989">You</gh-label>
+        <gh-btn slot="header-actions" size="icon" variant="invisible" aria-label="更多操作">
+          <gh-icon name="kebab-horizontal"></gh-icon>
+        </gh-btn>
+        <gh-md>${safe}</gh-md>
+        <gh-reactions slot="footer"><gh-reaction emoji="👍" count="0"></gh-reaction></gh-reactions>`;
+      timeline.append(item);
+      item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      toast('评论已发送', 'ok');
+    };
+    composer.addEventListener('gh:send', (e) => {
+      const text = (e.detail && e.detail.value || '').trim();
+      if (!text) return;
+      addComment(text);
+      composer.clear();
+    });
+    $('#adv-comment-send').addEventListener('click', () => composer.send());
+    $('#adv-comment-cancel').addEventListener('click', () => composer.clear());
+
+    /* 合并卡片里的「查看全部检查」跳到检查面板 */
+    const prTabs = $('#pr-tabs');
+    document.querySelectorAll('[data-switch-tab]').forEach((host) => {
+      host.addEventListener('click', () => {
+        const target = prTabs.querySelector(`gh-tab[panel="${host.getAttribute('data-switch-tab')}"]`);
+        if (target) target.click();
+      });
+    });
+
+    /* 抽屉式提示：演示行状态 API（点击侧栏评审人切换当前行） */
+    document.querySelectorAll('.adv-person').forEach((row) => {
+      row.addEventListener('click', () => {
+        if (window.GHUI) window.GHUI.current(row);
+      });
+    });
+
+    /* 只为演示/截图方便：?tab=commits|checks|files 与 ?open=search|labels|merge
+       （要等 gh-ui.js 升级完自定义元素后再执行） */
+    const applyParams = () => {
+      const params = new URLSearchParams(location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) {
+        const tab = prTabs.querySelector(`gh-tab[panel="p-${tabParam}"]`);
+        if (tab) tab.click();
+      }
+      const openParam = params.get('open');
+      if (openParam === 'search') $('#adv-search-dialog').setAttribute('open', '');
+      if (openParam === 'labels') {
+        const pop = $('#adv-label-popover');
+        if (pop) pop.open();
+      }
+      if (openParam === 'merge') $('#adv-merge-btn').click();
+    };
+    if (document.readyState === 'complete') setTimeout(applyParams, 80);
+    else window.addEventListener('load', () => setTimeout(applyParams, 80));
+  })();
+</script>
+</body>
+</html>

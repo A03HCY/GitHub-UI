@@ -1,0 +1,136 @@
+<!DOCTYPE html><html data-gh-theme="light"><head><meta charset="utf-8">
+<script defer src="../dist/gh-ui.js"></script></head>
+<body>
+<gh-option-list id="single" heading="Models">
+  <gh-option value="auto" selected>Auto</gh-option>
+  <gh-option-group label="Fast">
+    <gh-option value="luna">GPT-6 Luna</gh-option>
+    <gh-option value="mini" disabled>GPT-5.4 mini</gh-option>
+  </gh-option-group>
+</gh-option-list>
+
+<gh-option-list id="multi" multiple searchable divided>
+  <gh-option icon="repo" value="a">CodonProject/codon-model</gh-option>
+  <gh-option icon="repo" value="b">A03HCY/Orbit</gh-option>
+  <gh-option icon="repo" value="c">A03HCY/Learn-Everything</gh-option>
+</gh-option-list>
+
+<gh-option-list id="filter">
+  <gh-option-group label="Include" multiple>
+    <gh-option value="authored" selected>Authored</gh-option>
+    <gh-option value="mentioned" selected>Mentioned</gh-option>
+  </gh-option-group>
+  <gh-option-group label="Results">
+    <gh-option value="3" selected>3</gh-option>
+    <gh-option value="6">6</gh-option>
+  </gh-option-group>
+</gh-option-list>
+
+<gh-composer id="c1" placeholder="Ask anything"><gh-btn slot="start">Ask</gh-btn></gh-composer>
+<gh-composer id="c2" disabled></gh-composer>
+
+<pre id="out"></pre>
+<script>
+const L=[]; const ok=(n,c,x='')=>L.push((c?'PASS ':'FAIL ')+n+(x?' → '+x:''));
+addEventListener('DOMContentLoaded',()=>{
+  const single=document.getElementById('single');
+  const multi=document.getElementById('multi');
+  const c1=document.getElementById('c1');
+
+  // --- 单选 ---
+  let ev=null;
+  single.addEventListener('gh:change',(e)=>{ev=e.detail});
+  single.querySelector('[value="luna"]').click();
+  ok('单选切换 selected', single.value==='luna' && single.querySelectorAll('[aria-selected="true"]').length===1, single.value);
+  ok('gh:change 带 label', ev && ev.label==='GPT-6 Luna', ev&&ev.label);
+
+  single.querySelector('[value="mini"]').click();
+  ok('disabled 不可选', single.value==='luna', single.value);
+
+  // 键盘：没有光标时应从「当前选中项」继续，且跳过 disabled
+  ok('点选后无残留高亮', single.querySelectorAll('.is-active').length===0,
+    String(single.querySelectorAll('.is-active').length));
+  single.focus();
+  single.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+  ok('↓ 从选中项继续并跳过 disabled', single.querySelector('.is-active')?.value==='luna',
+    single.querySelector('.is-active')?.value);
+  single.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
+  single.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+  ok('键盘 ↑ + Enter 选中', single.value==='auto', single.value);
+
+  // --- 高亮唯一性：悬停别的行会清掉键盘光标 ---
+  single.focus();
+  single.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+  const act=single.querySelector('.is-active');
+  act.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));
+  ok('键盘光标存在', single.querySelectorAll('.is-active').length===1);
+  const other=[...single.querySelectorAll('gh-option')].find((o)=>o!==act);
+  other.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));
+  ok('悬停他行后光标清除', single.querySelectorAll('.is-active').length===0,
+    String(single.querySelectorAll('.is-active').length));
+
+  // --- 多选 ---
+  multi.querySelector('[value="a"]').click();
+  multi.querySelector('[value="c"]').click();
+  ok('多选累加', multi.values.join(',')==='a,c', multi.values.join(','));
+  multi.querySelector('[value="a"]').click();
+  ok('多选取消', multi.values.join(',')==='c', multi.values.join(','));
+
+  // --- 搜索 ---
+  const input=multi.querySelector('.gh-option-list__input');
+  input.value='orbit';
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  const visible=[...multi.querySelectorAll('gh-option')].filter(o=>!o.hidden).map(o=>o.value);
+  ok('搜索过滤', visible.join(',')==='b', visible.join(','));
+
+  input.value='zzz';
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  ok('空态显示', multi.querySelector('.gh-option-list__empty').hidden===false);
+
+  input.value='';
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  ok('清空搜索恢复', [...multi.querySelectorAll('gh-option')].every(o=>!o.hidden));
+
+  // --- 分组单选 / 多选混排 ---
+  const filter=document.getElementById('filter');
+  ok('分组初值互不干扰', filter.values.join(',')==='authored,mentioned,3', filter.values.join(','));
+
+  filter.querySelector('[value="6"]').click();
+  ok('单选组只清本组', filter.values.join(',')==='authored,mentioned,6', filter.values.join(','));
+
+  filter.querySelector('[value="mentioned"]').click();
+  ok('多选组可取消', filter.values.join(',')==='authored,6', filter.values.join(','));
+
+  filter.querySelector('[value="authored"]').click();
+  filter.querySelector('[value="mentioned"]').click();
+  ok('多选组可再勾', filter.values.join(',')==='mentioned,6', filter.values.join(','));
+
+  // --- 输入框 ---
+  const ta=c1.querySelector('.gh-composer__input');
+  const sendBtn=c1.querySelector('.gh-composer__send');
+  ok('空内容禁用发送', sendBtn.disabled===true);
+
+  let sent=null;
+  c1.addEventListener('gh:send',(e)=>{sent=e.detail.value});
+  ta.value='hello world';
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
+  ok('有内容启用发送', sendBtn.disabled===false);
+
+  ta.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+  ok('Enter 发送', sent==='hello world', String(sent));
+
+  sent=null;
+  ta.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,shiftKey:true}));
+  ok('Shift+Enter 不发送', sent===null);
+
+  c1.value='';
+  ok('清空后禁用', sendBtn.disabled===true && c1.value==='');
+
+  // --- 禁用态 ---
+  const c2=document.getElementById('c2');
+  ok('disabled 输入框', c2.querySelector('.gh-composer__input').disabled===true
+    && c2.querySelector('.gh-composer__send').disabled===true);
+
+  document.getElementById('out').textContent=L.join('\n');
+});
+</script></body></html>
