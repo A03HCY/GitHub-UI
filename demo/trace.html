@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>orbit-settlement · 智能追溯 — gh-ui 高级示例</title>
+
+<style>
+  /* ==========================================================
+     页面级样式：只做布局与页面私有件。
+     颜色 / 圆角 / 字体 / 动效全部取自库 token，跟随明暗主题。
+     圆角只用 4px（--gh-radius-sm）与 6px（--gh-radius）两档。
+     ========================================================== */
+  body {
+    margin: 0; background: var(--gh-canvas); color: var(--gh-fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gh-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .tr-muted { color: var(--gh-fg-muted); }
+  .tr-mono { font-family: var(--gh-mono); }
+
+  /* ---------- 顶部导航（深色 bar 内部） ---------- */
+  .tr-nav { display: flex; align-items: center; gap: 14px; min-height: 32px; }
+  .tr-nav__brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 15px; }
+  .tr-nav__brand:hover { text-decoration: none; opacity: .88; }
+  .tr-nav__links { display: flex; align-items: center; gap: 2px; }
+  .tr-nav__links a {
+    color: rgba(255, 255, 255, .76); font-size: 14px; font-weight: 500;
+    padding: 5px 10px; border-radius: var(--gh-radius); line-height: 20px;
+  }
+  .tr-nav__links a:hover { color: #fff; background: rgba(255, 255, 255, .12); text-decoration: none; }
+  .tr-nav__links a.is-on { color: #fff; }
+  .tr-search {
+    display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 140px; max-width: 300px;
+    height: 30px; margin-left: auto; padding: 0 8px 0 10px; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .28); border-radius: var(--gh-radius);
+    background: rgba(255, 255, 255, .07); color: rgba(255, 255, 255, .72);
+    font: inherit; font-size: 13px; text-align: left;
+  }
+  .tr-search:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+  .tr-search__ph { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .tr-kbd {
+    flex: none; padding: 0 5px; border-radius: var(--gh-radius-sm); line-height: 18px; font-size: 11px;
+    border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .1);
+    color: rgba(255, 255, 255, .66); font-family: var(--gh-mono);
+  }
+  .tr-nav__actions { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+  .tr-nav__actions .gh-btn--invisible { color: rgba(255, 255, 255, .76); }
+  .tr-nav__actions .gh-btn--invisible:hover { color: #fff; background: rgba(255, 255, 255, .14); }
+  .tr-avatar-btn { display: inline-flex; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; line-height: 0; }
+
+  /* ---------- 示例说明条 ---------- */
+  .tr-note {
+    border-bottom: 1px solid var(--gh-border); background: var(--gh-canvas-subtle);
+    font-size: 12px; color: var(--gh-fg-muted);
+  }
+  .tr-note__inner { display: flex; align-items: center; gap: 8px; padding: 7px 0; flex-wrap: wrap; }
+  .tr-note__inner code { font-family: var(--gh-mono); font-size: 11.5px; }
+  .tr-note__inner a { margin-left: auto; font-weight: 500; }
+
+  /* ---------- 项目头 ---------- */
+  .tr-repo { padding-top: 22px; }
+  .tr-repo__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tr-repo__owner { font-size: 16px; font-weight: 500; color: var(--gh-fg); }
+  .tr-repo__slash { color: var(--gh-fg-muted); }
+  .tr-repo__name { font-size: 20px; font-weight: 600; color: var(--gh-fg); letter-spacing: -.2px; }
+  .tr-repo__name:hover { color: var(--gh-accent); text-decoration: none; }
+  .tr-repo__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .tr-repo__desc { margin: 8px 0 0; font-size: 14px; color: var(--gh-fg-muted); }
+  .tr-repo__tabs {
+    display: flex; align-items: center; margin-top: 14px; overflow-x: auto;
+    border-bottom: 1px solid var(--gh-border); scrollbar-width: none;
+  }
+  .tr-repo__tabs::-webkit-scrollbar { display: none; }
+  .tr-repo__tabs a {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    padding: 9px 12px; margin-bottom: -1px; line-height: 20px; font-size: 14px;
+    color: var(--gh-fg); border-bottom: 2px solid transparent;
+  }
+  .tr-repo__tabs a:hover { border-bottom-color: var(--gh-border); text-decoration: none; }
+  .tr-repo__tabs a.is-on { border-bottom-color: var(--gh-tab-indicator); font-weight: 600; }
+  .tr-repo__tabs .gh-badge { font-variant-numeric: tabular-nums; }
+
+  /* ---------- 主体两栏 ---------- */
+  .tr-layout {
+    display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 24px;
+    align-items: start; padding: 20px 0 44px;
+  }
+  .tr-rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
+  @media (max-width: 1080px) {
+    .tr-layout { grid-template-columns: minmax(0, 1fr); }
+    .tr-rail { position: static; }
+    .tr-nav__links { display: none; }
+  }
+
+  /* 状态胶囊（页面私有，比 gh-label 更适合紧凑表格行） */
+  .tr-state {
+    display: inline-flex; align-items: center; gap: 4px; flex: none;
+    padding: 0 6px; border-radius: var(--gh-radius-sm);
+    font-size: 11px; line-height: 18px; font-weight: 500;
+    background: var(--gh-canvas-subtle); color: var(--gh-fg-muted);
+  }
+  .tr-state--ok { background: var(--gh-success-subtle); color: var(--gh-success); }
+  .tr-state--weak { background: var(--gh-warning-subtle); color: var(--gh-warning); }
+  .tr-state--missing { background: var(--gh-danger-subtle); color: var(--gh-danger); }
+  .tr-state--pending { background: var(--gh-accent-subtle); color: var(--gh-accent); }
+
+  /* ---------- 追溯矩阵 ---------- */
+  .tr-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--gh-border-muted);
+  }
+  .tr-toolbar__search { flex: 1 1 220px; max-width: 320px; min-width: 160px; }
+  .tr-matrix { --tr-gap: 14px; }
+  .tr-row {
+    display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 16px;
+    align-items: center; padding: 10px 16px;
+    border-top: 1px solid var(--gh-border-muted);
+  }
+  .tr-row[hidden] { display: none; }
+  .tr-row:not(.tr-row--head):hover { background: var(--gh-canvas-subtle); }
+  .tr-row--head {
+    border-top: 0; padding: 8px 16px; background: var(--gh-canvas-subtle);
+    font-size: 12px; font-weight: 600; color: var(--gh-fg-muted);
+  }
+  .tr-stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--tr-gap); }
+  .tr-stages span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tr-row__chain { --gh-trace-gap: var(--tr-gap); }
+
+  .tr-cell { min-width: 0; }
+  .tr-cell__top { display: flex; align-items: center; gap: 6px; }
+  .tr-cell__ref { font-family: var(--gh-mono); font-size: 12.5px; font-weight: 600; }
+  .tr-cell__title {
+    margin-top: 2px; font-size: 13px; line-height: 18px; color: var(--gh-fg);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tr-cell__meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11.5px; color: var(--gh-fg-muted); }
+
+  .tr-matrix__foot {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; border-top: 1px solid var(--gh-border-muted);
+    background: var(--gh-canvas-subtle); border-radius: 0 0 var(--gh-radius) var(--gh-radius);
+    font-size: 12px; color: var(--gh-fg-muted);
+  }
+  .tr-matrix__foot #trace-count { margin-left: auto; }
+  .tr-legend { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .tr-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+  .tr-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--gh-fg-muted); }
+  .tr-dot--ok { background: var(--gh-success); }
+  .tr-dot--weak { background: var(--gh-warning); }
+  .tr-dot--missing { background: var(--gh-danger); }
+  .tr-dot--pending { background: var(--gh-accent); }
+  .tr-empty { padding: 28px 16px; text-align: center; font-size: 13px; color: var(--gh-fg-muted); }
+
+  /* ---------- 证据链 / 发布影响面板 ---------- */
+  .tr-panel { padding: 16px; }
+  .tr-panel__hint { margin: 0 0 14px; font-size: 12px; color: var(--gh-fg-muted); line-height: 18px; }
+  .tr-ev { font-size: 13px; line-height: 20px; color: var(--gh-fg); }
+  .tr-ev__row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; color: var(--gh-fg-muted); }
+  .tr-ev__row b { color: var(--gh-fg); font-weight: 600; }
+  .tr-code {
+    padding: 1px 5px; border-radius: var(--gh-radius-sm); font-family: var(--gh-mono); font-size: 12px;
+    background: var(--gh-canvas-subtle); border: 1px solid var(--gh-border-muted);
+  }
+  .tr-release-delta { display: inline-flex; align-items: center; gap: 4px; font-family: var(--gh-mono); font-size: 12px; }
+  .tr-add { color: var(--gh-success); }
+  .tr-del { color: var(--gh-danger); }
+
+  /* ---------- 右栏卡片内部 ---------- */
+  .tr-health { display: flex; align-items: center; gap: 16px; }
+  .tr-health__rows { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--gh-fg-muted); flex: 1; }
+  .tr-health__row { display: flex; align-items: center; gap: 6px; }
+  .tr-health__row b { margin-left: auto; color: var(--gh-fg); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .tr-health__note { margin: 14px 0 0; font-size: 12px; color: var(--gh-fg-muted); }
+  .tr-spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; margin-top: 10px; }
+  .tr-spark i { flex: 1; border-radius: 2px; background: var(--gh-success); opacity: .35; }
+  .tr-spark i:last-child { opacity: 1; }
+  .tr-spark__axis { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; color: var(--gh-fg-muted); }
+
+  .tr-source { display: flex; flex-direction: column; gap: 10px; }
+  .tr-source__row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gh-fg-muted); }
+  .tr-source__row > span:first-child { width: 72px; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tr-source__row gh-progress { flex: 1; }
+  .tr-source__row b { width: 34px; text-align: right; color: var(--gh-fg); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .tr-todo { display: flex; flex-direction: column; gap: 10px; }
+  .tr-todo__item { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 18px; }
+  .tr-todo__item gh-icon { margin-top: 2px; flex: none; }
+  .tr-todo__main { min-width: 0; flex: 1; }
+  .tr-todo__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tr-todo__s { font-size: 11.5px; color: var(--gh-fg-muted); }
+
+  .tr-audit .gh-timeline__body { font-size: 12.5px; line-height: 18px; }
+  .tr-audit .gh-timeline__item { padding-bottom: 14px; }
+  .tr-audit .gh-timeline__marker { width: 10px; height: 10px; margin-top: 5px; }
+
+  /* ---------- 抽屉（证据链） ---------- */
+  .tr-ev-h { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .tr-ev__sub { margin: 0; font-size: 12px; color: var(--gh-fg-muted); }
+  .tr-drawer-body { display: flex; flex-direction: column; gap: 16px; }
+  .tr-drawer-body .gh-callout__desc { font-size: 12.5px; }
+  .tr-drawer-block__h {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+    font-size: 12px; font-weight: 600; color: var(--gh-fg-muted); letter-spacing: .3px;
+  }
+
+  /* ---------- 页脚 ---------- */
+  .tr-footer { border-top: 1px solid var(--gh-border); background: var(--gh-canvas-subtle); padding: 22px 0; }
+  .tr-footer__inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--gh-fg-muted); }
+  .tr-footer__brand { display: inline-flex; align-items: center; gap: 6px; color: var(--gh-fg); font-weight: 600; font-size: 13px; }
+  .tr-footer nav { display: flex; gap: 14px; margin-left: auto; }
+</style>
+
+<script defer src="../dist/gh-ui.js?v=0.29.0"></script>
+<script>
+  /* 主题：?theme=dark 直接进暗色，否则按 localStorage / 系统偏好 */
+  (function () {
+    try {
+      const q = new URLSearchParams(location.search).get('theme');
+      const saved = q || localStorage.getItem('gh-theme');
+      if (q) localStorage.setItem('gh-theme', q);
+      if (saved === 'dark' || saved === 'light') document.documentElement.dataset.ghTheme = saved;
+    } catch (_) { /* ignore */ }
+  })();
+</script>
+</head>
+<body>
+
+<!-- ============ 顶部导航 ============ -->
+<gh-header>
+  <gh-container wide>
+    <div class="tr-nav">
+      <a class="tr-nav__brand" href="index.html">
+        <gh-icon name="mark-github" size="28"></gh-icon>
+        <span>gh-ui</span>
+      </a>
+      <nav class="tr-nav__links">
+        <a href="#">产品</a>
+        <a href="#">团队</a>
+        <a href="#">文档</a>
+        <a class="is-on" href="#">追溯</a>
+      </nav>
+      <button class="tr-search" type="button" aria-label="搜索项目">
+        <gh-icon name="search" size="14"></gh-icon>
+        <span class="tr-search__ph">搜索项目、需求或版本…</span>
+        <span class="tr-kbd">/</span>
+      </button>
+      <div class="tr-nav__actions">
+        <gh-btn variant="invisible" size="icon" id="theme-toggle" aria-label="切换明暗主题" title="切换明暗主题">
+          <gh-icon name="moon"></gh-icon>
+        </gh-btn>
+        <button class="tr-avatar-btn" type="button" aria-label="账号菜单">
+          <gh-avatar size="26" src="avatar.svg">舟</gh-avatar>
+        </button>
+      </div>
+    </div>
+  </gh-container>
+</gh-header>
+
+<!-- 示例说明条 -->
+<div class="tr-note">
+  <gh-container wide>
+    <div class="tr-note__inner">
+      <gh-icon name="info" size="14"></gh-icon>
+      <span>高级示例：用 <code>gh-trace</code> 拼一个团队项目追溯工作台。组件只负责画链路，数据、筛选与抽屉都在页面脚本里。</span>
+      <a href="index.html">回组件目录 →</a>
+    </div>
+  </gh-container>
+</div>
+
+<!-- ============ 项目头 ============ -->
+<gh-container wide>
+  <div class="tr-repo">
+    <div class="tr-repo__head">
+      <gh-icon name="repo" size="16" class="tr-muted"></gh-icon>
+      <a class="tr-repo__owner" href="#">teamflow</a>
+      <span class="tr-repo__slash">/</span>
+      <a class="tr-repo__name" href="#">orbit-settlement</a>
+      <gh-label>Private</gh-label>
+      <div class="tr-repo__actions">
+        <gh-btn size="sm"><gh-icon name="eye" size="14"></gh-icon>Watch<gh-badge>8</gh-badge></gh-btn>
+        <gh-btn size="sm"><gh-icon name="git-branch" size="14"></gh-icon>Fork<gh-badge>2</gh-badge></gh-btn>
+        <gh-btn size="sm" id="trace-run"><gh-icon name="sparkle" size="14"></gh-icon>重新推断</gh-btn>
+      </div>
+    </div>
+    <p class="tr-repo__desc">
+      结算与对账服务 · Python / PostgreSQL ·
+      团队项目智能追溯已开启，需求到发布的每一次关联都留痕
+    </p>
+    <div class="tr-repo__tabs">
+      <a href="#"><gh-icon name="code" size="14"></gh-icon>代码</a>
+      <a href="#"><gh-icon name="issue-opened" size="14"></gh-icon>事项<gh-badge>12</gh-badge></a>
+      <a href="#"><gh-icon name="git-pull-request" size="14"></gh-icon>合并请求<gh-badge>4</gh-badge></a>
+      <a class="is-on" href="#"><gh-icon name="cross-reference" size="14"></gh-icon>追溯</a>
+      <a href="#"><gh-icon name="rocket" size="14"></gh-icon>发布</a>
+      <a href="#"><gh-icon name="shield-check" size="14"></gh-icon>审计</a>
+      <a href="#" style="margin-left:auto"><gh-icon name="gear" size="14"></gh-icon>设置</a>
+    </div>
+  </div>
+
+  <!-- ============ 主体 ============ -->
+  <div class="tr-layout">
+
+    <!-- ---------- 左：追溯工作区 ---------- -->
+    <div>
+      <gh-page-head title="智能追溯" desc="需求 → 任务 → 代码 → 评审 → 发布，链路由提交信息、PR 关联与模型推断共同生成">
+        <gh-btn size="sm"><gh-icon name="download" size="14"></gh-icon>导出报告</gh-btn>
+        <gh-btn size="sm" variant="primary" id="link-missing"><gh-icon name="link" size="14"></gh-icon>补齐断链</gh-btn>
+      </gh-page-head>
+
+      <div style="margin:16px 0">
+        <gh-callout bordered badge icon="sparkle" title="模型发现 3 条断链、12 条弱关联"
+          description="「发票导出中文乱码」的修复已合并且上线，但没有关联到任何发布记录；另有 12 条关联只靠提交信息相似度推断，建议人工复核。">
+          <gh-btn slot="action" size="sm" id="review-weak">复核弱关联</gh-btn>
+        </gh-callout>
+      </div>
+
+      <gh-grid cols="4" gap="12">
+        <gh-stat label="追溯覆盖率" value="92" unit="%" tone="ok" icon="shield-check" foot="较上迭代 +2.4%"></gh-stat>
+        <gh-stat label="断链" value="3" unit="条" tone="warn" icon="alert" foot="最久 6 天未闭环"></gh-stat>
+        <gh-stat label="AI 推断关联" value="12" unit="条" tone="purple" icon="sparkle" foot="待复核 5 条"></gh-stat>
+        <gh-stat label="闭环中位耗时" value="2.4" unit="天" tone="accent" icon="clock" foot="需求合并到发布"></gh-stat>
+      </gh-grid>
+
+      <div style="margin-top:16px">
+        <gh-box>
+          <gh-tabs slot="tabs">
+            <gh-tab panel="p-trace" selected>追溯矩阵</gh-tab>
+            <gh-tab panel="p-evidence">证据链</gh-tab>
+            <gh-tab panel="p-release">发布影响</gh-tab>
+          </gh-tabs>
+
+          <!-- 追溯矩阵 -->
+          <div id="p-trace">
+            <div class="tr-toolbar">
+              <gh-input id="trace-search" class="tr-toolbar__search" placeholder="筛选需求 / 提交 / 版本…" icon="search" clearable
+                aria-label="筛选追溯记录"></gh-input>
+              <gh-segmented id="trace-filter" value="all" label="按状态筛选">
+                <gh-segment value="all">全部</gh-segment>
+                <gh-segment value="missing" icon="alert">断链</gh-segment>
+                <gh-segment value="weak" icon="sparkle">待复核</gh-segment>
+                <gh-segment value="pending" icon="clock">进行中</gh-segment>
+              </gh-segmented>
+            </div>
+            <div class="tr-matrix" id="trace-matrix">
+              <div class="tr-row tr-row--head">
+                <div>需求 / 负责人</div>
+                <div class="tr-stages">
+                  <span>任务</span><span>代码</span><span>评审</span><span>发布</span>
+                </div>
+              </div>
+              <div id="trace-rows"></div>
+              <div class="tr-empty" id="trace-empty" hidden>没有匹配的追溯记录，换个关键词试试。</div>
+            </div>
+            <div class="tr-matrix__foot">
+              <div class="tr-legend">
+                <span><i class="tr-dot tr-dot--ok"></i>已闭环</span>
+                <span><i class="tr-dot tr-dot--weak"></i>AI 推断</span>
+                <span><i class="tr-dot tr-dot--missing"></i>断链</span>
+                <span><i class="tr-dot tr-dot--pending"></i>进行中</span>
+              </div>
+              <span id="trace-count">—</span>
+            </div>
+          </div>
+
+          <!-- 证据链 -->
+          <div id="p-evidence" class="tr-panel" hidden>
+            <p class="tr-panel__hint">按时间回放 #482 的完整证据链：每一次关联都记录来源（提交信息 / PR 正文 / 模型推断）与操作人。</p>
+            <gh-timeline>
+              <gh-timeline-item icon="issue-opened">
+                <span slot="header"><strong>张宁</strong> 创建需求 <a href="#">#482</a> · <span class="tr-muted">11-02 09:14</span></span>
+                <div class="tr-ev">
+                  结算页在 15:00 峰值出现 <span class="tr-code">504</span>，重试后仍有 8% 请求超时。
+                  <div class="tr-ev__row" style="margin-top:6px"><span>影响服务</span><b>settlement-api</b><span>·</span><span>优先级</span><b>P1</b></div>
+                </div>
+              </gh-timeline-item>
+              <gh-timeline-item icon="tasklist">
+                <span slot="header"><strong>张宁</strong> 拆出任务 <a href="#">T-1130</a>「超时重试与降级」· <span class="tr-muted">11-02 11:40</span></span>
+              </gh-timeline-item>
+              <gh-timeline-item icon="git-pull-request" variant="success">
+                <span slot="header"><a href="#">#128</a> 合并到 <span class="tr-code">main</span> · <span class="tr-muted">11-05 17:22</span></span>
+                <div class="tr-ev">PR 正文写了 <span class="tr-code">Closes #482</span>，关联强度：<b>强</b>（规则命中）。</div>
+              </gh-timeline-item>
+              <gh-timeline-item icon="sparkle" variant="accent">
+                <span slot="header">模型补全 <span class="tr-muted">11-05 17:25</span></span>
+                <div class="tr-ev">
+                  提交 <span class="tr-code">7d21e0b</span> 与需求 <a href="#">#455</a> 语义相似度 0.87，标记为<b>弱关联</b>，等待人工复核。
+                </div>
+              </gh-timeline-item>
+              <gh-timeline-item icon="tag" variant="success">
+                <span slot="header"><a href="#">v2.4.0</a> 发布 · <span class="tr-muted">11-06 20:10</span></span>
+                <div class="tr-ev">包含 6 条需求、23 个提交，自动生成发布说明并回写需求状态。</div>
+              </gh-timeline-item>
+              <gh-timeline-item icon="shield-check">
+                <span slot="header"><strong>审计机器人</strong> 校验通过 · <span class="tr-muted">11-06 20:12</span></span>
+                <div class="tr-ev">全部 6 条需求均有代码与发布证据，覆盖率 100%。</div>
+              </gh-timeline-item>
+            </gh-timeline>
+          </div>
+
+          <!-- 发布影响 -->
+          <div id="p-release" class="tr-panel" hidden>
+            <p class="tr-panel__hint">发布视角：每个版本覆盖了哪些需求、改了哪些文件、验证是否齐全。</p>
+            <gh-table dense>
+              <thead>
+                <tr>
+                  <th>版本</th><th>需求</th><th>变更</th><th>验证</th><th>追溯</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><a href="#" class="tr-mono">v2.4.0</a><div class="tr-muted" style="font-size:11.5px">11-06 发布</div></td>
+                  <td><a href="#">#482</a>、<a href="#">#455</a>、<a href="#">#463</a></td>
+                  <td><span class="tr-release-delta"><span class="tr-add">+412</span><span class="tr-del">−96</span></span></td>
+                  <td><gh-icon name="check-circle" size="14" style="color:var(--gh-success)"></gh-icon> 18 / 18</td>
+                  <td><span class="tr-state tr-state--ok">已闭环</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" class="tr-mono">v2.3.2</a><div class="tr-muted" style="font-size:11.5px">10-28 发布</div></td>
+                  <td><a href="#">#471</a>、<a href="#">#440</a></td>
+                  <td><span class="tr-release-delta"><span class="tr-add">+38</span><span class="tr-del">−12</span></span></td>
+                  <td><gh-icon name="alert" size="14" style="color:var(--gh-warning)"></gh-icon> 9 / 12</td>
+                  <td><span class="tr-state tr-state--missing">断链 1</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" class="tr-mono">v2.3.1</a><div class="tr-muted" style="font-size:11.5px">10-19 发布</div></td>
+                  <td><a href="#">#433</a>、<a href="#">#437</a>、<a href="#">#441</a></td>
+                  <td><span class="tr-release-delta"><span class="tr-add">+121</span><span class="tr-del">−44</span></span></td>
+                  <td><gh-icon name="check-circle" size="14" style="color:var(--gh-success)"></gh-icon> 14 / 14</td>
+                  <td><span class="tr-state tr-state--ok">已闭环</span></td>
+                </tr>
+              </tbody>
+            </gh-table>
+          </div>
+        </gh-box>
+      </div>
+    </div>
+
+    <!-- ---------- 右：健康度 / 来源 / 待办 / 审计 ---------- -->
+    <aside class="tr-rail">
+      <gh-box title="追溯健康度">
+        <div class="tr-health">
+          <gh-progress-circle value="92" size="84" tone="success" label="覆盖率"></gh-progress-circle>
+          <div class="tr-health__rows">
+            <div class="tr-health__row"><i class="tr-dot tr-dot--ok"></i>强关联<b>78</b></div>
+            <div class="tr-health__row"><i class="tr-dot tr-dot--weak"></i>模型推断<b>12</b></div>
+            <div class="tr-health__row"><i class="tr-dot tr-dot--missing"></i>断链<b>3</b></div>
+            <div class="tr-health__row"><i class="tr-dot tr-dot--pending"></i>进行中<b>5</b></div>
+          </div>
+        </div>
+        <div class="tr-spark" aria-hidden="true">
+          <i style="height:46%"></i><i style="height:58%"></i><i style="height:52%"></i><i style="height:64%"></i>
+          <i style="height:61%"></i><i style="height:72%"></i><i style="height:68%"></i><i style="height:78%"></i>
+          <i style="height:74%"></i><i style="height:82%"></i><i style="height:86%"></i><i style="height:92%"></i>
+        </div>
+        <div class="tr-spark__axis"><span>10-26</span><span>11-08</span></div>
+        <p class="tr-health__note">较上迭代 <b style="color:var(--gh-success)">+2.4%</b> · 团队目标 95%</p>
+      </gh-box>
+
+      <gh-box title="关联来源">
+        <div class="tr-source">
+          <div class="tr-source__row">
+            <span>提交信息</span>
+            <gh-progress value="62" thin tone="success"></gh-progress><b>62%</b>
+          </div>
+          <div class="tr-source__row">
+            <span>PR 正文</span>
+            <gh-progress value="26" thin tone="accent"></gh-progress><b>26%</b>
+          </div>
+          <div class="tr-source__row">
+            <span>模型推断</span>
+            <gh-progress value="12" thin tone="warning"></gh-progress><b>12%</b>
+          </div>
+        </div>
+        <p class="tr-health__note">推断占比高于 10% 时，审计会提示补充显式关联。</p>
+      </gh-box>
+
+      <gh-box title="待处理">
+        <div class="tr-todo">
+          <div class="tr-todo__item">
+            <gh-icon name="alert" size="14" style="color:var(--gh-danger)"></gh-icon>
+            <div class="tr-todo__main">
+              <div class="tr-todo__t"><a href="#">#471</a> 发票导出中文乱码</div>
+              <div class="tr-todo__s">已上线 6 天，未关联发布 · 周珂</div>
+            </div>
+          </div>
+          <div class="tr-todo__item">
+            <gh-icon name="sparkle" size="14" style="color:var(--gh-warning)"></gh-icon>
+            <div class="tr-todo__main">
+              <div class="tr-todo__t"><a href="#">#455</a> 退款状态与账务不同步</div>
+              <div class="tr-todo__s">1 条推断关联待复核 · 李予</div>
+            </div>
+          </div>
+          <div class="tr-todo__item">
+            <gh-icon name="clock" size="14" style="color:var(--gh-accent)"></gh-icon>
+            <div class="tr-todo__main">
+              <div class="tr-todo__t"><a href="#">#488</a> 账单地址校验规则</div>
+              <div class="tr-todo__s">开发中，预计 2.5.0 闭环 · 王一鸣</div>
+            </div>
+          </div>
+        </div>
+      </gh-box>
+
+      <gh-box title="最近审计">
+        <div class="tr-audit">
+          <gh-timeline compact>
+            <gh-timeline-item time="11-06 20:12">v2.4.0 发布校验通过</gh-timeline-item>
+            <gh-timeline-item time="11-06 18:30">自动补齐 2 条提交关联</gh-timeline-item>
+            <gh-timeline-item time="11-05 17:25">模型新增 1 条弱关联</gh-timeline-item>
+            <gh-timeline-item dot="none"><a href="#">查看全部审计记录 →</a></gh-timeline-item>
+          </gh-timeline>
+        </div>
+      </gh-box>
+    </aside>
+  </div>
+</gh-container>
+
+<!-- ============ 证据链抽屉 ============ -->
+<gh-drawer id="evidence" width="440px" title="追溯证据链" label="追溯证据链">
+  <div class="tr-drawer-body" id="evidence-body"></div>
+  <div slot="footer" style="display:flex;gap:8px;justify-content:flex-end;width:100%">
+    <gh-btn size="sm" id="evidence-close">关闭</gh-btn>
+    <gh-btn size="sm" variant="primary" id="evidence-ok">
+      <gh-icon name="check" size="14"></gh-icon>标记已复核
+    </gh-btn>
+  </div>
+</gh-drawer>
+
+<!-- ============ 页脚 ============ -->
+<footer class="tr-footer">
+  <gh-container wide>
+    <div class="tr-footer__inner">
+      <span class="tr-footer__brand"><gh-icon name="mark-github" size="20"></gh-icon> gh-ui</span>
+      <span>智能追溯示例：需求、代码与发布之间的可核查链路</span>
+      <nav>
+        <a href="index.html">组件目录</a>
+        <a href="advanced.html">Pull request 示例</a>
+        <a href="../src/components/trace.js">组件源码</a>
+      </nav>
+    </div>
+  </gh-container>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => [...(root || document).querySelectorAll(sel)];
+
+  /* ---------------- 演示数据：一行 = 一条需求的全链路 ----------------
+     真实项目里这份数据来自 issue / commit / PR / release 的关联表，
+     组件只负责把 state 画出来，不含任何业务判断。
+
+     判定口径（示例，按各自团队流程替换）：
+       任务   ok=有子任务且已完成      missing=需求没有对应任务
+       代码   ok=提交/PR 正文显式引用需求号   weak=模型语义相似度命中但无显式引用
+       评审   ok=已合并且有人 approve   missing=没有 PR
+       发布   ok=发布记录回写了该需求   weak=靠时间窗推断   missing=上线但未关联发布
+     覆盖率 = 有 ok 末节点的需求 / 已关闭需求；pending 不进分母。 */
+  const STATE = {
+    ok: { label: '已闭环' },
+    weak: { label: '待复核' },
+    missing: { label: '有断链' },
+    pending: { label: '进行中' },
+  };
+
+  const ROWS = [
+    {
+      id: '#482', title: '结算页偶发 3s 超时', owner: '张宁', sprint: 'S24', state: 'ok',
+      updated: '11-06 20:12',
+      explain: '提交信息命中 `#482`，PR 正文含 `Closes #482`，发布 v2.4.0 自动回写。链路全部为强关联，无需人工确认。',
+      events: [
+        ['11-05 17:22', 'PR #128 合并，规则命中关联'],
+        ['11-06 20:10', 'v2.4.0 发布，回写需求状态'],
+      ],
+      nodes: [
+        { kind: 'task', ref: 'T-1130', title: '超时重试与降级', meta: '张宁', state: 'ok' },
+        { kind: 'commit', ref: 'a3f9c21', title: 'fix: retry on 503/504', meta: '11-05', state: 'ok' },
+        { kind: 'pr', ref: '#128', title: 'Retry settlement calls', meta: '已合并', state: 'ok' },
+        { kind: 'release', ref: 'v2.4.0', title: '结算中心 2.4', meta: '11-06', state: 'ok' },
+      ],
+    },
+    {
+      id: '#455', title: '退款状态与账务不同步', owner: '李予', sprint: 'S24', state: 'weak',
+      updated: '11-05 17:25',
+      explain: '提交 `7d21e0b` 与需求描述语义相似度 0.87，但没有显式引用，模型标记为**弱关联**。建议在 PR 正文补 `Refs #455` 转成强关联。',
+      events: [
+        ['11-03 14:08', '提交 7d21e0b 推送'],
+        ['11-05 17:25', '模型推断关联（相似度 0.87）'],
+      ],
+      nodes: [
+        { kind: 'task', ref: 'T-1102', title: '退款回调幂等', meta: '李予', state: 'ok' },
+        { kind: 'commit', ref: '7d21e0b', title: 'refund: idempotent callback', meta: '11-03', state: 'weak', flag: 'AI 推断' },
+        { kind: 'pr', ref: '#119', title: 'Idempotent refund callback', meta: '已合并', state: 'ok' },
+        { kind: 'release', ref: 'v2.4.0', title: '结算中心 2.4', meta: '11-06', state: 'ok' },
+      ],
+    },
+    {
+      id: '#471', title: '发票导出中文乱码', owner: '周珂', sprint: 'S23', state: 'missing',
+      updated: '10-31 09:20',
+      explain: '修复已合并并随 v2.3.2 上线，但发布记录没有关联该需求，链路末端断开。建议手动关联 `v2.3.2 → #471`，或让发布流水线回写。',
+      events: [
+        ['10-30 11:02', 'PR #124 合并'],
+        ['10-31 09:20', '审计检出：发布未关联需求'],
+      ],
+      nodes: [
+        { kind: 'task', ref: 'T-1121', title: '导出编码修复', meta: '周珂', state: 'ok' },
+        { kind: 'commit', ref: 'c90ab13', title: 'fix: utf-8 BOM in export', meta: '10-30', state: 'ok' },
+        { kind: 'pr', ref: '#124', title: 'Fix invoice export encoding', meta: '已合并', state: 'ok' },
+        { kind: 'release', ref: '', title: '未关联发布', state: 'missing', flag: '断链 6 天' },
+      ],
+    },
+    {
+      id: '#463', title: '对账批次时间漂移', owner: '陈子豪', sprint: 'S24', state: 'ok',
+      updated: '11-04 16:40',
+      explain: '提交与 PR 均显式引用需求，发布说明由流水线自动生成，链路完整。',
+      events: [
+        ['11-03 10:15', 'PR #121 合并'],
+        ['11-06 20:10', 'v2.4.0 发布'],
+      ],
+      nodes: [
+        { kind: 'task', ref: 'T-1108', title: '批次时钟对齐', meta: '陈子豪', state: 'ok' },
+        { kind: 'commit', ref: '2b8e05f', title: 'fix: align settlement batch clock', meta: '11-03', state: 'ok' },
+        { kind: 'pr', ref: '#121', title: 'Align batch clock', meta: '已合并', state: 'ok' },
+        { kind: 'release', ref: 'v2.4.0', title: '结算中心 2.4', meta: '11-06', state: 'ok' },
+      ],
+    },
+    {
+      id: '#488', title: '账单地址校验规则', owner: '王一鸣', sprint: 'S24', state: 'pending',
+      updated: '11-08 09:05',
+      explain: '需求仍在开发中，任务、提交、评审与发布都还没有产生证据。进行中的链路不算断链，不计入覆盖率分母。',
+      events: [
+        ['11-07 15:30', '任务 T-1140 开始开发'],
+        ['11-08 09:05', '同步最新提交：暂无'],
+      ],
+      nodes: [
+        { kind: 'task', ref: 'T-1140', title: '地址规范化校验', meta: '开发中', state: 'pending', flag: '进行中' },
+        { kind: 'commit', ref: '', title: '等待提交', state: 'pending' },
+        { kind: 'pr', ref: '', title: '未创建', state: 'pending' },
+        { kind: 'release', ref: '', title: '计划 2.5.0', state: 'pending' },
+      ],
+    },
+  ];
+
+  /* 判定说明里允许写 `代码` 与 **加粗**，这里做一次最小的行内转换 */
+  const inline = (s) => String(s)
+    .replace(/`([^`]+)`/g, '<code class="tr-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  /* ---------------- 渲染 ---------------- */
+  const nodeHTML = (n) =>
+    '<gh-trace-node kind="' + n.kind + '"' +
+    (n.ref ? ' ref="' + n.ref + '"' : '') +
+    (n.title ? ' title="' + n.title + '"' : '') +
+    (n.meta ? ' meta="' + n.meta + '"' : '') +
+    ' state="' + (n.state || 'ok') + '"' +
+    (n.flag ? ' flag="' + n.flag + '"' : '') +
+    '></gh-trace-node>';
+
+  const rowHTML = (row) => (
+    '<div class="tr-row" data-row-id="' + row.id + '" data-state="' + row.state + '">' +
+      '<div class="tr-cell">' +
+        '<div class="tr-cell__top">' +
+          '<a class="tr-cell__ref" href="#">' + row.id + '</a>' +
+          '<span class="tr-state tr-state--' + row.state + '">' + STATE[row.state].label + '</span>' +
+        '</div>' +
+        '<div class="tr-cell__title">' + row.title + '</div>' +
+        '<div class="tr-cell__meta">' +
+          '<gh-avatar size="16">' + row.owner.slice(0, 1) + '</gh-avatar>' +
+          '<span>' + row.owner + '</span><span aria-hidden="true">·</span><span>' + row.sprint + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<gh-trace class="tr-row__chain" cols="4" label="' + row.id + ' ' + row.title + ' 的追溯链">' +
+        row.nodes.map(nodeHTML).join('') +
+      '</gh-trace>' +
+    '</div>'
+  );
+
+  const renderRows = () => {
+    $('#trace-rows').innerHTML = ROWS.map(rowHTML).join('');
+  };
+
+  /* ---------------- 筛选：状态分段 + 关键词 ---------------- */
+  let filterState = 'all';
+  let query = '';
+
+  const applyFilter = () => {
+    let shown = 0;
+    $$('#trace-rows .tr-row').forEach((row) => {
+      const hitState = filterState === 'all' || row.dataset.state === filterState;
+      const hitText = !query || row.textContent.toLowerCase().includes(query);
+      row.hidden = !(hitState && hitText);
+      if (!row.hidden) shown += 1;
+    });
+    $('#trace-empty').hidden = shown > 0;
+    $('#trace-count').textContent = shown
+      ? '展示 ' + shown + ' / 48 条需求 · 覆盖率 92%'
+      : '没有匹配的追溯记录';
+  };
+
+  /* ---------------- 抽屉：单条需求的完整证据链 ---------------- */
+  const drawer = $('#evidence');
+
+  const openEvidence = (rowId) => {
+    const row = ROWS.find((r) => r.id === rowId);
+    if (!row) return;
+    const chain = [{ kind: 'issue', ref: row.id, title: row.title, meta: row.owner, state: 'ok' }]
+      .concat(row.nodes);
+
+    $('#evidence-body').innerHTML =
+      '<div>' +
+        '<h2 class="tr-ev-h">' + row.id + ' ' + row.title + '</h2>' +
+        '<p class="tr-ev__sub">' + row.owner + ' · ' + row.sprint + ' · 更新于 ' + row.updated + '</p>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<span class="tr-state tr-state--' + row.state + '">' + STATE[row.state].label + '</span>' +
+        '<span class="tr-muted" style="font-size:12px">链路节点 ' + chain.length + ' 个 · 强关联 ' +
+          row.nodes.filter((n) => n.state === 'ok').length + ' 条</span>' +
+      '</div>' +
+      '<div class="tr-drawer-block">' +
+        '<div class="tr-drawer-block__h">完整链路</div>' +
+        '<gh-trace vertical compact label="' + row.id + ' 的完整证据链">' + chain.map(nodeHTML).join('') + '</gh-trace>' +
+      '</div>' +
+      '<gh-callout dense variant="' + (row.state === 'missing' ? 'warning' : 'info') + '" icon="sparkle" title="判定说明">' +
+        '<div slot="description">' + inline(row.explain) + '</div>' +
+      '</gh-callout>' +
+      '<div class="tr-drawer-block">' +
+        '<div class="tr-drawer-block__h">证据事件</div>' +
+        '<gh-timeline compact>' +
+          row.events.map((e) => '<gh-timeline-item time="' + e[0] + '">' + e[1] + '</gh-timeline-item>').join('') +
+        '</gh-timeline>' +
+      '</div>';
+
+    drawer.open();
+  };
+
+  /* ---------------- 交互绑定 ---------------- */
+  renderRows();
+  applyFilter();
+
+  document.addEventListener('gh:trace-select', (e) => {
+    const row = e.target.closest('[data-row-id]');
+    if (row) openEvidence(row.dataset.rowId);
+  });
+
+  const seg = $('#trace-filter');
+  seg && seg.addEventListener('gh:change', (e) => {
+    filterState = e.detail.value;
+    applyFilter();
+  });
+
+  const search = $('#trace-search');
+  search && search.addEventListener('input', () => {
+    query = search.value.trim().toLowerCase();
+    applyFilter();
+  });
+
+  $('#evidence-close').addEventListener('click', () => drawer.close());
+  $('#evidence-ok').addEventListener('click', () => {
+    drawer.close();
+    if (window.GHUI) GHUI.toast('已记为人工复核，写入审计记录', 'success');
+  });
+
+  /* 「重新推断」：把 #455 的弱关联升级成强关联，演示数据驱动的重绘 */
+  $('#trace-run').addEventListener('click', function () {
+    const btn = this;
+    if (btn.hasAttribute('disabled')) return;
+    btn.setAttribute('disabled', '');
+    const label = btn.innerHTML;
+    btn.innerHTML = '<gh-icon name="sync" size="14"></gh-icon>推断中…';
+    setTimeout(() => {
+      const row = ROWS.find((r) => r.id === '#455');
+      row.nodes = row.nodes.map((n) => (n.state === 'weak' ? Object.assign({}, n, { state: 'ok', flag: '' }) : n));
+      row.state = row.nodes.some((n) => n.state === 'missing') ? 'missing' : 'ok';
+      renderRows();
+      applyFilter();
+      btn.innerHTML = label;
+      btn.removeAttribute('disabled');
+      if (window.GHUI) GHUI.toast('复核完成：1 条推断关联已确认为强关联', 'success');
+    }, 1100);
+  });
+
+  $('#review-weak').addEventListener('click', () => {
+    if (window.GHUI) GHUI.toast('已打开弱关联复核队列（演示）');
+  });
+
+  $('#link-missing').addEventListener('click', () => {
+    openEvidence('#471');
+  });
+
+  /* ---------------- 主题切换 ---------------- */
+  const toggle = $('#theme-toggle');
+  const paint = () => {
+    const icon = $('gh-icon', toggle);
+    const dark = (window.GHUI ? GHUI.theme() : 'light') === 'dark';
+    if (icon) icon.setAttribute('name', dark ? 'sun' : 'moon');
+  };
+  paint();
+  toggle.addEventListener('click', () => {
+    const next = (window.GHUI ? GHUI.theme() : 'light') === 'dark' ? 'light' : 'dark';
+    if (window.GHUI) GHUI.setTheme(next);
+    else document.documentElement.dataset.ghTheme = next;
+    try { localStorage.setItem('gh-theme', next); } catch (_) { /* ignore */ }
+    paint();
+  });
+
+  /* 搜索框快捷键：/ 直接聚焦 */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+    const inner = search && search._inner;
+    if (inner) { e.preventDefault(); inner.focus(); }
+  });
+
+  /* 截图 / 分享用：?row=%23482 直接打开某条需求的证据链 */
+  const rowParam = new URLSearchParams(location.search).get('row');
+  if (rowParam) setTimeout(() => openEvidence(decodeURIComponent(rowParam)), 120);
+})();
+</script>
+</body>
+</html>

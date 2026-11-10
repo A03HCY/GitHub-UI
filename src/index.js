@@ -25,6 +25,7 @@ import './components/settings.js';
 import './components/sidebar.js';
 import './components/autocomplete.js';
 import './components/contributions.js';
+import './components/trace.js';
 
 import { GHToast } from './components/feedback.js';
 import { GHDialog } from './components/interactive.js';

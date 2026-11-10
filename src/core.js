@@ -50,7 +50,7 @@ export function readableText(color) {
 
 // 界面文案：可在引入后覆盖 GHUI.strings.close = 'Close' 等
 // 库版本：用于 CSS 缓存击穿，也可在页面里读取
-export const VERSION = '0.28.7';
+export const VERSION = '0.29.0';
 
 export const STRINGS = {
   close: '关闭',

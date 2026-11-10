@@ -2780,3 +2780,125 @@ gh-sidebar.is-collapsed .gh-sidebar__pill { display: none; }
   .gh-callout__action > gh-btn,
   .gh-callout__action > .gh-btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ============ gh-trace ============ */
+/* 追溯链：胶囊 + 连接线。连接线的颜色/线型由「目标节点」的 state 变量决定，
+   所以断链、AI 推断只在节点上写一次，线自动跟着变。 */
+gh-trace { display: block; min-width: 0; }
+.gh-trace {
+  --gh-trace-gap: 18px;
+  display: flex; align-items: stretch; min-width: 0;
+  overflow-x: auto; scrollbar-width: thin;
+}
+/* cols="n"：按列对齐（多行矩阵），节点撑满整列 */
+.gh-trace--grid {
+  display: grid; grid-template-columns: repeat(var(--gh-trace-cols, 4), minmax(0, 1fr));
+  gap: var(--gh-trace-gap); overflow: visible;
+}
+.gh-trace--grid > * { min-width: 0; }
+.gh-trace--vertical { flex-direction: column; overflow: visible; }
+
+.gh-trace__node {
+  --gh-trace-line: var(--gh-border);
+  --gh-trace-line-style: solid;
+  position: relative; display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto; min-width: 0; padding: 6px 10px;
+  box-sizing: border-box; text-align: left; cursor: pointer;
+  border: 1px solid var(--gh-border); border-radius: var(--gh-radius);
+  background: var(--gh-canvas); color: var(--gh-fg);
+  font-family: inherit;
+  transition: background-color var(--gh-dur-fast) var(--gh-ease-out),
+    border-color var(--gh-dur-fast) var(--gh-ease-out);
+}
+.gh-trace--grid .gh-trace__node { width: 100%; }
+.gh-trace__node:hover { background: var(--gh-canvas-hover); border-color: var(--gh-fg-muted); }
+.gh-trace__node:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+
+/* 状态：weak 警示色 + 虚线，missing 灰虚线（未关联），pending 蓝边 */
+.gh-trace__node[data-state="weak"] {
+  --gh-trace-line: var(--gh-warning); --gh-trace-line-style: dashed;
+  border-color: color-mix(in srgb, var(--gh-warning) 45%, var(--gh-border));
+}
+.gh-trace__node[data-state="weak"] .gh-trace__icon { color: var(--gh-warning); }
+.gh-trace__node[data-state="missing"] {
+  --gh-trace-line-style: dashed;
+  border-style: dashed; background: transparent;
+}
+.gh-trace__node[data-state="missing"] .gh-trace__title { color: var(--gh-fg-muted); }
+.gh-trace__node[data-state="pending"] {
+  --gh-trace-line-style: dashed;
+  border-color: color-mix(in srgb, var(--gh-accent) 40%, var(--gh-border));
+}
+.gh-trace__node[data-state="pending"] .gh-trace__icon { color: var(--gh-accent); }
+
+/* 连接线：横向画在左侧 gap 里，纵向画在左缘图标下方 */
+.gh-trace__node + .gh-trace__node { margin-left: var(--gh-trace-gap); }
+.gh-trace--grid .gh-trace__node + .gh-trace__node { margin-left: 0; }
+.gh-trace__node + .gh-trace__node::before {
+  content: ''; position: absolute; top: 50%; left: calc(var(--gh-trace-gap) * -1);
+  width: var(--gh-trace-gap); margin-top: -.5px;
+  border-top: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+}
+.gh-trace__node + .gh-trace__node::after {
+  content: ''; position: absolute; top: 50%; left: -6px; width: 5px; height: 5px;
+  margin-top: -3px; transform: rotate(45deg);
+  border-top: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+  border-right: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+}
+/* 纵向时线落在左侧图标下方（--gh-trace-stem），而不是胶囊正中：
+   胶囊在纵向模式下是整行宽的，画在 50% 会和内容脱节 */
+.gh-trace--vertical { --gh-trace-stem: 18px; }
+.gh-trace--compact.gh-trace--vertical { --gh-trace-stem: 16px; }
+.gh-trace--vertical .gh-trace__node + .gh-trace__node {
+  margin-left: 0; margin-top: var(--gh-trace-gap);
+}
+.gh-trace--vertical .gh-trace__node + .gh-trace__node::before {
+  top: calc(var(--gh-trace-gap) * -1); left: var(--gh-trace-stem); width: 0;
+  height: var(--gh-trace-gap);
+  margin: 0 0 0 -.5px; border-top: 0;
+  border-left: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+}
+.gh-trace--vertical .gh-trace__node + .gh-trace__node::after {
+  top: -8px; left: var(--gh-trace-stem); margin: 0 0 0 -2.5px;
+  border-top: 0;
+  border-right: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+  border-bottom: 1px var(--gh-trace-line-style) var(--gh-trace-line);
+}
+
+/* 内容：图标 + 两行文本 + 状态角标 */
+.gh-trace__icon { flex: none; display: inline-flex; color: var(--gh-fg-muted); }
+.gh-trace__icon svg { display: block; }
+.gh-trace__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.gh-trace__line {
+  display: flex; align-items: baseline; gap: 5px; min-width: 0; overflow: hidden;
+  font-size: 12px; line-height: 16px; color: var(--gh-fg-muted);
+}
+.gh-trace__label { flex: none; }
+.gh-trace__ref { flex: none; font-family: var(--gh-mono); font-size: 11.5px; color: var(--gh-fg); }
+.gh-trace__ref:empty { display: none; }
+.gh-trace__meta {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11.5px;
+}
+.gh-trace__meta:empty { display: none; }
+.gh-trace__title {
+  font-size: 13px; line-height: 18px; color: var(--gh-fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gh-trace__flag {
+  flex: none; display: inline-flex; align-items: center; gap: 3px;
+  padding: 0 5px; border-radius: var(--gh-radius-sm);
+  font-size: 11px; line-height: 16px; font-weight: 500;
+  background: var(--gh-canvas-subtle); color: var(--gh-fg-muted);
+}
+.gh-trace__node[data-state="weak"] .gh-trace__flag {
+  background: var(--gh-warning-subtle); color: var(--gh-warning);
+}
+.gh-trace__node[data-state="pending"] .gh-trace__flag {
+  background: var(--gh-accent-subtle); color: var(--gh-accent);
+}
+
+/* 紧凑：密集列表 / 抽屉里的证据链 */
+.gh-trace--compact { --gh-trace-gap: 14px; }
+.gh-trace--compact .gh-trace__node { padding: 4px 8px; gap: 6px; }
+.gh-trace--compact .gh-trace__meta { display: none; }

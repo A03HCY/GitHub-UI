@@ -673,6 +673,51 @@ Note: committed with `skip-yamllint`: ci.yml already trips yamllint's 80-column 
     </p>
   </section>
 
+  <h2>追溯链 gh-trace</h2>
+  <section>
+    <p data-no-code style="font-size:12px;line-height:1.7;color:var(--gh-fg-muted);margin:0 0 16px">
+      一条链路 = 若干 <code>gh-trace-node</code>。连接线的颜色与线型跟着「目标节点」的 state 走：
+      <code>ok</code> 实灰线、<code>weak</code> 虚线警示色（AI 推断）、<code>missing</code> 虚线灰（断链）、<code>pending</code> 虚线蓝（进行中）。
+      不写 <code>cols</code> 按内容横向排；<code>cols="4"</code> 按列对齐，多行矩阵里同一列就是同一个阶段；<code>vertical compact</code> 用于抽屉里的证据链。
+      点击节点派发 <code>gh:trace-select</code>（detail: kind / ref / title / state）。
+    </p>
+
+    <gh-trace label="需求 #482 的追溯链">
+      <gh-trace-node kind="issue" ref="#482" title="结算页偶发 3s 超时" meta="张宁" state="ok"></gh-trace-node>
+      <gh-trace-node kind="task" ref="T-1130" title="超时重试与降级" meta="张宁" state="ok"></gh-trace-node>
+      <gh-trace-node kind="commit" ref="a3f9c21" title="fix: retry on 503/504" meta="11-05" state="weak" flag="AI 推断"></gh-trace-node>
+      <gh-trace-node kind="pr" ref="#128" title="Retry settlement calls" meta="已合并" state="ok"></gh-trace-node>
+      <gh-trace-node kind="release" title="未关联发布" state="missing" flag="断链 6 天"></gh-trace-node>
+    </gh-trace>
+
+    <div class="row" style="align-items:flex-start;gap:28px;margin-top:22px">
+      <div style="min-width:236px">
+        <div style="font-size:12px;color:var(--gh-fg-muted);margin-bottom:8px">纵向 · compact</div>
+        <gh-trace vertical compact label="纵向追溯链">
+          <gh-trace-node kind="issue" ref="#471" title="发票导出中文乱码" state="ok"></gh-trace-node>
+          <gh-trace-node kind="commit" ref="c90ab13" title="fix: utf-8 BOM in export" state="ok"></gh-trace-node>
+          <gh-trace-node kind="review" ref="#124" title="已评审" state="ok"></gh-trace-node>
+          <gh-trace-node kind="release" title="未关联发布" state="missing"></gh-trace-node>
+        </gh-trace>
+      </div>
+      <div style="flex:1;min-width:320px">
+        <div style="font-size:12px;color:var(--gh-fg-muted);margin-bottom:8px">cols="4"：多行按列对齐</div>
+        <gh-trace cols="4" label="已闭环的追溯链">
+          <gh-trace-node kind="task" ref="T-1130" title="超时重试与降级" meta="张宁" state="ok"></gh-trace-node>
+          <gh-trace-node kind="commit" ref="a3f9c21" title="fix: retry on 503/504" state="ok"></gh-trace-node>
+          <gh-trace-node kind="pr" ref="#128" title="Retry settlement calls" state="ok"></gh-trace-node>
+          <gh-trace-node kind="release" ref="v2.4.0" title="结算中心 2.4" state="ok"></gh-trace-node>
+        </gh-trace>
+        <gh-trace cols="4" style="margin-top:12px" label="进行中的追溯链">
+          <gh-trace-node kind="task" ref="T-1140" title="地址规范化校验" meta="开发中" state="pending" flag="进行中"></gh-trace-node>
+          <gh-trace-node kind="commit" title="等待提交" state="pending"></gh-trace-node>
+          <gh-trace-node kind="pr" title="未创建" state="pending"></gh-trace-node>
+          <gh-trace-node kind="release" title="计划 2.5.0" state="pending"></gh-trace-node>
+        </gh-trace>
+      </div>
+    </div>
+  </section>
+
   <h2>贡献活动 gh-contribution</h2>
   <section>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:32px;align-items:start;max-width:820px">
